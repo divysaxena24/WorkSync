@@ -5,7 +5,19 @@ import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-export function EmployeeDashboard({ user, tasks }: { user: any, tasks: any[] }) {
+import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+
+export function EmployeeDashboard({ 
+  user, 
+  tasks,
+  allProfiles,
+  activeProfileId
+}: { 
+  user: any, 
+  tasks: any[],
+  allProfiles: any[],
+  activeProfileId: string
+}) {
   const todo = tasks.filter(t => t.status === "todo" || t.status === "pending");
   const inProgress = tasks.filter(t => t.status === "in_progress" || t.status === "needs_improvement" || t.status === "submitted");
   const done = tasks.filter(t => t.status === "completed" || t.status === "approved");
@@ -31,10 +43,15 @@ export function EmployeeDashboard({ user, tasks }: { user: any, tasks: any[] }) 
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">My Tasks</h1>
-        <p className="text-muted-foreground mt-1">Welcome back, {user.name}!</p>
-      </div>
+<div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+  <div className="flex items-center gap-4">
+    <WorkspaceSwitcher profiles={allProfiles} activeProfileId={activeProfileId} />
+    <div>
+      <h1 className="text-3xl font-black tracking-tight text-slate-900 uppercase italic">My Tasks</h1>
+      <p className="text-slate-500 font-medium tracking-widest text-[10px] uppercase">Welcome back, {user.name}</p>
+    </div>
+  </div>
+</div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-slate-100 p-4 rounded-xl">

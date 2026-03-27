@@ -14,6 +14,7 @@ export async function POST(req: Request) {
     if (!clerkId) return new NextResponse("Unauthorized", { status: 401 });
 
     const { taskId, githubUrl } = await req.json();
+    console.log(`[SUBMIT_API] Received submission for task ${taskId}: ${githubUrl}`);
 
     if (!taskId || !githubUrl) {
       return new NextResponse("Missing taskId or githubUrl", { status: 400 });

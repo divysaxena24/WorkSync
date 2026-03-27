@@ -14,6 +14,7 @@ export function TaskSubmissionForm({ taskId }: { taskId: string }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("[SUBMIT_DEBUG] handleSubmit triggered for taskId:", taskId, "url:", url);
     if (!url) return toast.error("Please enter a GitHub URL");
 
     setLoading(true);
@@ -23,6 +24,8 @@ export function TaskSubmissionForm({ taskId }: { taskId: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ taskId, githubUrl: url }),
       });
+      
+      console.log("[SUBMIT_DEBUG] Response status:", res.status);
 
       if (!res.ok) {
          const errorText = await res.text();
@@ -46,7 +49,7 @@ export function TaskSubmissionForm({ taskId }: { taskId: string }) {
         <label className="text-xs font-bold uppercase tracking-widest text-slate-400">GitHub Link (PR, Commit, or Repo)</label>
         <div className="flex gap-2">
           <Input 
-            type="url" 
+            type="text" 
             placeholder="https://github.com/owner/repo/pull/123" 
             value={url}
             onChange={(e) => setUrl(e.target.value)}

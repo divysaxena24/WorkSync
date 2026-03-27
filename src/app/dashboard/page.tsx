@@ -5,21 +5,30 @@ import { ManagerDashboard } from "./ManagerDashboard";
 import { EmployeeDashboard } from "./EmployeeDashboard";
 
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: { u?: string } }) {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
 
-  const dbUsers = await sql`
+  const { u } = await searchParams;
+
+  const allProfiles = await sql`
     SELECT u.*, row_to_json(c.*) as company
     FROM "User" u
     LEFT JOIN "Company" c ON u."companyId" = c.id
     WHERE u."clerkId" = ${userId}
-    LIMIT 1
+    ORDER BY u."createdAt" DESC
   `;
   
-  const dbUser: any = dbUsers[0];
+  if (allProfiles.length === 0) {
+    redirect("/onboarding");
+  }
 
-  if (!dbUser || !dbUser.companyId || !dbUser.company) {
+  // Find active profile: either by 'u' param or default to the most recent one
+  const dbUser: any = u 
+    ? allProfiles.find((p: any) => p.id === u) || allProfiles[0]
+    : allProfiles[0];
+
+  if (!dbUser.companyId || !dbUser.company) {
     redirect("/onboarding");
   }
 
@@ -76,6 +85,8 @@ export default async function DashboardPage() {
           alerts={alerts}
           escalations={escalations}
           performance={performance}
+          allProfiles={JSON.parse(JSON.stringify(allProfiles))}
+          activeProfileId={dbUser.id}
         />
       </div>
     );
@@ -83,7 +94,12 @@ export default async function DashboardPage() {
     const myTasks = allTasks.filter((t: any) => t.ownerId === dbUser.id);
     return (
       <div className="min-h-screen bg-slate-50 p-8">
-        <EmployeeDashboard user={dbUser} tasks={myTasks} />
+        <EmployeeDashboard 
+          user={dbUser} 
+          tasks={myTasks} 
+          allProfiles={JSON.parse(JSON.stringify(allProfiles))}
+          activeProfileId={dbUser.id}
+        />
       </div>
     );
   }

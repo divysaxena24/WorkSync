@@ -21,20 +21,6 @@ export async function POST(req: Request) {
       return new NextResponse("Missing invite code", { status: 400 });
     }
     
-    const dbUsers = await sql`SELECT * FROM "User" WHERE "clerkId" = ${userId} LIMIT 1`;
-    let dbUser = dbUsers[0] as any;
-
-    if (!dbUser) {
-      const uName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "User";
-      const uEmail = user.emailAddresses[0].emailAddress;
-      const newUsers = await sql`
-        INSERT INTO "User" (id, "clerkId", name, email, "createdAt")
-        VALUES (${createId()}, ${userId}, ${uName}, ${uEmail}, NOW())
-        RETURNING *
-      `;
-      dbUser = newUsers[0];
-    }
-
     const companies = await sql`SELECT * FROM "Company" WHERE "inviteCode" = ${inviteCode} LIMIT 1`;
     const company = companies[0] as any;
 
@@ -42,10 +28,24 @@ export async function POST(req: Request) {
       return new NextResponse("Invalid invite code", { status: 404 });
     }
 
+    // Check if user already has a profile in THIS company
+    const existing = await sql`
+      SELECT id FROM "User" 
+      WHERE "clerkId" = ${userId} AND "companyId" = ${company.id} 
+      LIMIT 1
+    `;
+
+    if (existing.length > 0) {
+      return NextResponse.json(company); // Already a member
+    }
+
+    const uName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "User";
+    const uEmail = user.emailAddresses[0].emailAddress;
+
+    // Create a NEW profile for this company
     await sql`
-      UPDATE "User"
-      SET "companyId" = ${company.id}, role = 'EMPLOYEE'
-      WHERE id = ${dbUser.id}
+      INSERT INTO "User" (id, "clerkId", name, email, "companyId", role, "createdAt")
+      VALUES (${createId()}, ${userId}, ${uName}, ${uEmail}, ${company.id}, 'EMPLOYEE', NOW())
     `;
 
     return NextResponse.json(company);

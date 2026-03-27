@@ -21,19 +21,8 @@ export async function POST(req: Request) {
       return new NextResponse("Missing name", { status: 400 });
     }
     
-    const dbUsers = await sql`SELECT * FROM "User" WHERE "clerkId" = ${userId} LIMIT 1`;
-    let dbUser = dbUsers[0] as any;
-
-    if (!dbUser) {
-      const uName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "User";
-      const uEmail = user.emailAddresses[0].emailAddress;
-      const newUsers = await sql`
-        INSERT INTO "User" (id, "clerkId", name, email, "createdAt")
-        VALUES (${createId()}, ${userId}, ${uName}, ${uEmail}, NOW())
-        RETURNING *
-      `;
-      dbUser = newUsers[0];
-    }
+    const uName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "User";
+    const uEmail = user.emailAddresses[0].emailAddress;
 
     const inviteCode = randomBytes(4).toString('hex').toUpperCase();
     const newCompanies = await sql`
@@ -43,10 +32,10 @@ export async function POST(req: Request) {
     `;
     const company = newCompanies[0] as any;
 
+    // Create a new User profile for this specific company
     await sql`
-      UPDATE "User"
-      SET "companyId" = ${company.id}, role = 'MANAGER'
-      WHERE id = ${dbUser.id}
+      INSERT INTO "User" (id, "clerkId", name, email, "companyId", role, "createdAt")
+      VALUES (${createId()}, ${userId}, ${uName}, ${uEmail}, ${company.id}, 'MANAGER', NOW())
     `;
 
     return NextResponse.json(company);

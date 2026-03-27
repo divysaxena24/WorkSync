@@ -7,18 +7,24 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Sparkles, ArrowRight, Zap, ShieldCheck } from "lucide-react";
 
+import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+
 export function ManagerDashboard({ 
   company, 
   tasks, 
   alerts,
   escalations,
-  performance 
+  performance,
+  allProfiles,
+  activeProfileId
 }: { 
   company: any, 
   tasks: any[], 
   alerts: any[],
   escalations: any[],
-  performance: any[]
+  performance: any[],
+  allProfiles: any[],
+  activeProfileId: string
 }) {
   const total = tasks.length;
   const completed = tasks.filter(t => t.status === "completed").length;
@@ -28,12 +34,15 @@ export function ManagerDashboard({
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">{company.name} Hub</h1>
-            <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">Antigravity Active</Badge>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <WorkspaceSwitcher profiles={allProfiles} activeProfileId={activeProfileId} />
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 uppercase italic leading-none">{company.name} Hub</h1>
+              <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 uppercase tracking-widest text-[10px] font-bold">Manager</Badge>
+            </div>
+            <p className="text-slate-500 font-medium text-xs tracking-tight">Monitoring platform performance and team execution loop.</p>
           </div>
-          <p className="text-slate-500 font-medium text-sm">Monitoring platform performance and team execution loop.</p>
         </div>
         <div className="flex items-center gap-3">
           <p className="text-sm text-slate-400 font-mono hidden md:block">Invite: {company.inviteCode}</p>
