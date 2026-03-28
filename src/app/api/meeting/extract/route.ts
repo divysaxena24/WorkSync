@@ -1,14 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { sql } from "@/lib/neon";
-import Groq from "groq-sdk";
 import { randomBytes } from "crypto";
+import { runMeetingExtractionPipeline } from "@/lib/ai/agents";
 
 const createId = () => randomBytes(12).toString('hex');
-
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
 
 export async function POST(req: Request) {
   try {
@@ -45,54 +41,29 @@ export async function POST(req: Request) {
     `;
     const meeting = meetings[0] as any;
 
-    const response = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages: [
-        {
-          role: "system",
-          content: `You are a task extraction assistant for a developer platform called WorkSyncAI. 
-          Extract all actionable developer tasks from the meeting transcript. 
-          
-          Guidelines:
-          - owner: Use only the first name of the person mentioned.
-          - deadline: Provide a strict YYYY-MM-DD format based on context. 
-            TODAY IS: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}. 
-            If someone says "by tomorrow", calculate tomorrow's date from today.
-            If no deadline is implied, use null.
-          - priority: "high" | "medium" | "low".
-          
-          Return ONLY a valid JSON object with a "tasks" key containing an array of objects.`,
-        },
-        {
-          role: "user",
-          content: transcript,
-        },
-      ],
-      response_format: { type: "json_object" },
-    });
-
-    const content = response.choices[0].message.content;
-    if (!content) {
-      throw new Error("No content received from AI");
-    }
-
-    let extractedData;
-    try {
-      const parsed = JSON.parse(content);
-      extractedData = Array.isArray(parsed) ? parsed : (parsed.tasks || Object.values(parsed)[0]);
-      
-      if (!Array.isArray(extractedData)) {
-          throw new Error("Invalid format from AI");
-      }
-    } catch (e) {
-      console.error("AI Parse Error:", e, content);
-      return NextResponse.json({ error: "Failed to parse AI response", raw: content }, { status: 500 });
-    }
-
+    // Fetch team members for the orchestrator
     const companyUsers = await sql`SELECT * FROM "User" WHERE "companyId" = ${dbUser.companyId}`;
+    const teamMembers = companyUsers.map((u: any) => u.name);
 
+    // Run the multi-agent pipeline
+    const pipelineResult = await runMeetingExtractionPipeline(
+      transcript,
+      teamMembers,
+      meeting.id
+    );
+
+    // Store meeting summary
+    try {
+      await sql`
+        UPDATE "Meeting" SET "summary" = ${pipelineResult.summary.summary} WHERE id = ${meeting.id}
+      `;
+    } catch {
+      // summary column may not exist yet, that's ok
+    }
+
+    // Create tasks with pending_review status
     const createdTasks = [];
-    for (const item of extractedData) {
+    for (const item of pipelineResult.tasks) {
       const { task: title, owner, deadline, priority } = item;
       
       const matchedUser = companyUsers.find((u: any) => 
@@ -101,13 +72,21 @@ export async function POST(req: Request) {
 
       const newTaskResults = await sql`
         INSERT INTO "Task" (id, title, owner, "ownerId", deadline, priority, status, "meetingId", "createdAt")
-        VALUES (${createId()}, ${title}, ${owner}, ${matchedUser ? matchedUser.id : null}, ${deadline}, ${priority || "medium"}, 'todo', ${meeting.id}, NOW())
+        VALUES (${createId()}, ${title}, ${owner}, ${matchedUser ? matchedUser.id : null}, ${deadline}, ${priority || "medium"}, 'pending_review', ${meeting.id}, NOW())
         RETURNING *
       `;
       createdTasks.push(newTaskResults[0]);
     }
 
-    return NextResponse.json({ meetingId: meeting.id, tasks: createdTasks });
+    return NextResponse.json({ 
+      meetingId: meeting.id, 
+      tasks: createdTasks,
+      summary: pipelineResult.summary,
+      confidence: pipelineResult.overallConfidence,
+      warnings: pipelineResult.warnings,
+      retried: pipelineResult.retried,
+      agentCount: 3
+    });
   } catch (error: any) {
     console.error("[MEETING_EXTRACT]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
