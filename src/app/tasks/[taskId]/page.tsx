@@ -1,14 +1,16 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { sql } from "@/lib/neon";
+import { sql } from "@/lib/core/neon";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { TaskSubmissionForm } from "@/components/TaskSubmissionForm";
-import { TaskStatusControl } from "@/components/TaskStatusControl";
-import { TaskTimeline } from "@/components/TaskTimeline";
-import { SubmissionActions } from "@/components/SubmissionActions";
+import { TaskSubmissionForm } from "@/components/tasks/TaskSubmissionForm";
+import { TaskStatusControl } from "@/components/tasks/TaskStatusControl";
+import { TaskTimeline } from "@/components/tasks/TaskTimeline";
+import { SubmissionActions } from "@/components/tasks/SubmissionActions";
+import { SubtaskManager } from "@/components/tasks/SubtaskManager";
+import { ResourceOptimization } from "@/components/ai/ResourceOptimization";
 import { 
   ArrowLeft, 
   Calendar, 
@@ -322,6 +324,11 @@ export default async function TaskDetailPage({ params }: { params: { taskId: str
                  </div>
 
                  <TaskTimeline currentStatus={task.status} submissions={submissions} />
+                 
+                 <div className="pt-6 space-y-6">
+                    <SubtaskManager taskId={task.id} />
+                    <ResourceOptimization taskId={task.id} />
+                 </div>
                  
                  <div className="pt-6 border-t border-white/5 flex items-center justify-between">
                     <div className="flex items-center gap-2">

@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Sparkles, ArrowRight, Zap, ShieldCheck } from "lucide-react";
 
-import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import { WorkspaceSwitcher } from "@/components/layout/WorkspaceSwitcher";
+import { GlobalSearch } from "@/components/ai/GlobalSearch";
 
 export function ManagerDashboard({ 
   company, 
@@ -36,6 +37,7 @@ export function ManagerDashboard({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <WorkspaceSwitcher profiles={allProfiles} activeProfileId={activeProfileId} />
+          <GlobalSearch />
           <div>
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 uppercase italic leading-none">{company.name} Hub</h1>

@@ -5,7 +5,8 @@ import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import { WorkspaceSwitcher } from "@/components/layout/WorkspaceSwitcher";
+import { GlobalSearch } from "@/components/ai/GlobalSearch";
 
 export function EmployeeDashboard({ 
   user, 
@@ -46,6 +47,7 @@ export function EmployeeDashboard({
 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
   <div className="flex items-center gap-4">
     <WorkspaceSwitcher profiles={allProfiles} activeProfileId={activeProfileId} />
+    <GlobalSearch />
     <div>
       <h1 className="text-3xl font-black tracking-tight text-slate-900 uppercase italic">My Tasks</h1>
       <p className="text-slate-500 font-medium tracking-widest text-[10px] uppercase">Welcome back, {user.name}</p>
