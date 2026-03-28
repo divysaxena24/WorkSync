@@ -56,8 +56,8 @@ export async function POST(req: Request) {
           Guidelines:
           - owner: Use only the first name of the person mentioned.
           - deadline: Provide a strict YYYY-MM-DD format based on context. 
-            TODAY IS: Friday, March 20, 2026. 
-            If someone says "by tomorrow", use 2026-03-21.
+            TODAY IS: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}. 
+            If someone says "by tomorrow", calculate tomorrow's date from today.
             If no deadline is implied, use null.
           - priority: "high" | "medium" | "low".
           
