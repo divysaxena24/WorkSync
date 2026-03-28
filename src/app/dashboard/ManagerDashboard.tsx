@@ -157,6 +157,7 @@ export function ManagerDashboard({
               <TableHeader>
                 <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
                   <TableHead className="text-xs font-bold uppercase tracking-wider text-slate-500">Task Definition</TableHead>
+                  <TableHead className="text-xs font-bold uppercase tracking-wider text-slate-500">Deadline</TableHead>
                   <TableHead className="text-xs font-bold uppercase tracking-wider text-slate-500">Assigned To</TableHead>
                   <TableHead className="text-xs font-bold uppercase tracking-wider text-slate-500">Execution State</TableHead>
                   <TableHead className="text-xs font-bold uppercase tracking-wider text-slate-500">Priority</TableHead>
@@ -170,12 +171,16 @@ export function ManagerDashboard({
                       <Link href={`/tasks/${task.id}`} className="hover:underline decoration-indigo-300 decoration-2 underline-offset-4">
                         <div className="font-semibold text-slate-700">{task.title}</div>
                       </Link>
-                      <div className="text-[10px] text-slate-400 mt-0.5">
-                        Deadline: {task.deadline ? (
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-xs font-medium text-slate-500 font-mono">
+                        {task.deadline ? (
                           isNaN(new Date(task.deadline).getTime()) 
                             ? task.deadline 
-                            : new Date(task.deadline).toLocaleDateString('en-US')
-                        ) : 'N/A'}
+                            : new Date(task.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                        ) : (
+                          <span className="text-slate-300">N/A</span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>

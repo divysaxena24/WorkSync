@@ -13,8 +13,8 @@ export async function POST(req: Request) {
     const { userId: clerkId } = await auth();
     if (!clerkId) return new NextResponse("Unauthorized", { status: 401 });
 
-    const { taskId, githubUrl } = await req.json();
-    console.log(`[SUBMIT_API] Received submission for task ${taskId}: ${githubUrl}`);
+    const { taskId, githubUrl, submissionNote } = await req.json();
+    console.log(`[SUBMIT_API] Received submission for task ${taskId} | URL: ${githubUrl} | Note: ${submissionNote?.substring(0, 30)}...`);
 
     if (!taskId || !githubUrl) {
       return new NextResponse("Missing taskId or githubUrl", { status: 400 });
@@ -29,10 +29,13 @@ export async function POST(req: Request) {
     const task = tasks[0] as any;
     if (!task) return new NextResponse("Task not found", { status: 404 });
 
-    // 2. Validate Ownership (Optional: allow managers to submit? Usually assigned dev)
+    // 2. Validate Ownership
     if (task.ownerId !== user.id && user.role !== 'MANAGER') {
+      console.warn(`[SUBMIT_API] Access Denied for user ${user.id} on task ${taskId}`);
       return new NextResponse("Access Denied: You are not assigned to this task.", { status: 403 });
     }
+
+    console.log(`[SUBMIT_API] Validated user ${user.id} for task ${taskId}`);
 
     // 3. Parse GitHub URL
     const githubMetadata = parseGitHubUrl(githubUrl);
@@ -42,21 +45,30 @@ export async function POST(req: Request) {
 
     // 4. Create Submission Record
     const submissionId = createId();
+    console.log(`[SUBMIT_API] Creating submission record ${submissionId}`);
     await sql`
       INSERT INTO "task_submissions" (
-        "id", "taskId", "userId", "companyId", "githubUrl", "submissionType", "createdAt"
+        "id", "taskId", "userId", "companyId", "githubUrl", "submissionType", "submission_note", "createdAt"
       ) VALUES (
-        ${submissionId}, ${taskId}, ${user.id}, ${user.companyId}, ${githubUrl}, ${githubMetadata.type}, NOW()
+        ${submissionId}, ${taskId}, ${user.id}, ${user.companyId}, ${githubUrl}, ${githubMetadata.type}, ${submissionNote || null}, NOW()
       )
     `;
 
+    // 4.5 Update Task Status to 'submitted' immediately
+    await sql`UPDATE "Task" SET status = 'submitted' WHERE id = ${taskId}`;
+    console.log(`[SUBMIT_API] Task ${taskId} status set to SUBMITTED`);
+
     // 5. Trigger AI Evaluation (Synchronous for now)
+    console.log(`[SUBMIT_API] Fetching code from GitHub...`);
     const work = await fetchGitHubWork(githubMetadata);
     
     if (work) {
+      // Temporarily mark as 'evaluating' in logs (UI can handle based on status 'submitted')
+      console.log(`[SUBMIT_API] Sending to AI for evaluation...`);
       const evaluation = await evaluateSubmission(task.title, task.description || "", work);
       
       if (evaluation) {
+        console.log(`[SUBMIT_API] AI Evaluation 0-100: ${evaluation.score} | Result: ${evaluation.status}`);
         // Update submission with evaluation results
         await sql`
           UPDATE "task_submissions"
@@ -66,6 +78,7 @@ export async function POST(req: Request) {
             "feedback" = ${evaluation.summary},
             "issues" = ${JSON.stringify(evaluation.issues)},
             "suggestions" = ${JSON.stringify(evaluation.suggestions)},
+            "manager_suggestion" = ${evaluation.managerSuggestion},
             "completionConfidence" = ${evaluation.completionConfidence}
           WHERE id = ${submissionId}
         `;

@@ -15,6 +15,7 @@ export interface EvaluationResponse {
   summary: string;
   issues: string[];
   suggestions: string[];
+  managerSuggestion: string;
   completionConfidence: number;
 }
 
@@ -27,30 +28,38 @@ export async function evaluateSubmission(
 ): Promise<EvaluationResponse | null> {
   try {
     const prompt = `
-      Evaluate the following code submission against the assigned task.
+      You are the ULTIMATE GATEKEEPER and RUTHLESS CHIEF ARCHITECT. 
+      Your mission is to verify if the code fulfills the ASSIGNED TASK with zero deviations.
+
+      THE LAW (TASK SPECIFICATION):
+      - TITLE: ${taskTitle}
+      - DESCRIPTION: ${taskDescription || "N/A"}
       
-      TASK TITLE: ${taskTitle}
-      TASK DESCRIPTION: ${taskDescription || "N/A"}
+      THE PROOF (SUBMISSION):
+      - DEV LABEL: ${work.title}
+      - DEV DESCRIPTION: ${work.description}
+      - CODE CHANGES (DIFF):
+      ${work.diff.substring(0, 25000)}
       
-      SUBMISSION TITLE: ${work.title}
-      SUBMISSION DESCRIPTION: ${work.description}
-      
-      CODE CHANGES (DIFF):
-      ${work.diff.substring(0, 10000)}
-      
-      Evaluate strictly for:
-      1. Alignment with task goals.
-      2. Technical completeness.
-      3. Code quality and best practices.
-      4. Missing edge cases.
-      
-      Return ONLY a valid JSON object with the following structure:
+      STRICT EVALUATION RULES:
+      1. THE SPEC IS ABSOLUTE: If a requirement is in the DESCRIPTION but missing in the CODE, it is a CRITICAL FAILURE.
+      2. NO SCOPE CREEP: Do not reward features that weren't asked for. Note them as "Unsolicited Changes" which may introduce bugs.
+      3. LOGICAL CORRECTNESS: Does the code actually work? Check for edge cases, null pointers, and logical fallacies.
+      4. MISSION ALIGNMENT: Does this PR directly advance the goal of '${taskTitle}'?
+
+      VERDICT REQUIREMENTS:
+      - "status" MUST be "needs_improvement" if ANY core requirement from the DESCRIPTION is missing.
+      - "status" MUST be "needs_improvement" if the "score" is below 80.
+      - "summary" MUST start with a clear "PASS" or "FAIL" assessment against the original mission.
+
+      OUTPUT JSON FORMAT:
       {
         "score": number (0-100),
         "status": "approved" | "needs_improvement",
-        "summary": "Short execution summary",
-        "issues": ["list of specific problems found"],
-        "suggestions": ["list of improvements"],
+        "summary": "BRUTAL technical dissection. Compare the CODE against the DESCRIPTION line-by-line.",
+        "issues": ["List specifically which requirements were MISSED or implementation flaws found"],
+        "suggestions": ["STRICTLY limited to fixing the missed requirements or quality issues within the original scope"],
+        "managerSuggestion": "DEFINTIVE ONE-LINE: 'REJECT: Missing core logic' or 'APPROVE: Task fully fulfilled'",
         "completionConfidence": number (0-1)
       }
     `;
@@ -60,7 +69,7 @@ export async function evaluateSubmission(
       messages: [
         {
           role: "system",
-          content: "You are a senior technical architect and code reviewer. You output only structured JSON analysis.",
+          content: "You are a ruthless, precision-focused Chief Architect. You treat the task description as absolute law. You have zero tolerance for missed requirements or unsolicited scope creep.",
         },
         {
           role: "user",

@@ -30,7 +30,9 @@ export function TaskStatusControl({ taskId, currentStatus }: { taskId: string, c
     }
   };
 
-  if (currentStatus !== 'todo' && currentStatus !== 'pending') return null;
+  if (currentStatus !== 'todo' && currentStatus !== 'pending' && currentStatus !== 'needs_improvement') return null;
+  
+  const isRework = currentStatus === 'needs_improvement';
 
   return (
     <Button 
@@ -39,7 +41,7 @@ export function TaskStatusControl({ taskId, currentStatus }: { taskId: string, c
       className="bg-indigo-600 hover:bg-indigo-500 shadow-xl shadow-indigo-600/20 rounded-2xl px-8 h-12 font-black tracking-widest uppercase text-xs group transition-all"
     >
       {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Play className="w-4 h-4 mr-2 fill-current group-hover:scale-110 transition-transform" />}
-      Start Execution
+      {isRework ? "Start Rework" : "Start Execution"}
     </Button>
   );
 }
