@@ -3,7 +3,7 @@
  * Records every AI agent decision for full auditability.
  */
 
-import { sql } from "./neon";
+import { sql } from "../core/neon";
 import { randomBytes } from "crypto";
 
 const createId = () => randomBytes(12).toString("hex");
