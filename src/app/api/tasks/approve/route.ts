@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { sql } from "@/lib/neon";
+import { sendTaskAssignmentEmail } from "@/lib/notifications";
 
 export async function POST(req: Request) {
   try {
@@ -22,9 +23,17 @@ export async function POST(req: Request) {
 
     if (action === "approve") {
       for (const taskId of taskIds) {
-        await sql`
-          UPDATE "Task" SET status = 'todo' WHERE id = ${taskId} AND status = 'pending_review'
+        const result = await sql`
+          UPDATE "Task" SET status = 'todo' WHERE id = ${taskId} AND status = 'pending_review' RETURNING *
         `;
+        const updatedTask = result[0] as any;
+        if (updatedTask && updatedTask.ownerId) {
+          const ownerRes = await sql`SELECT * FROM "User" WHERE id = ${updatedTask.ownerId} LIMIT 1`;
+          const owner = ownerRes[0] as any;
+          if (owner && owner.email) {
+            await sendTaskAssignmentEmail(owner.email, owner.name, updatedTask.title);
+          }
+        }
       }
       return NextResponse.json({ message: `${taskIds.length} tasks approved`, count: taskIds.length });
     } else if (action === "reject") {
