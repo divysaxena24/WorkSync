@@ -1,205 +1,115 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { UserButton, SignInButton, useUser } from "@clerk/nextjs";
 import { 
-  LayoutDashboard, 
-  Mic2, 
-  CheckSquare, 
-  GitPullRequest, 
-  Users, 
-  Settings,
   Terminal,
   Activity,
-  ChevronRight,
-  ChevronLeft,
-  Command as CommandIcon,
+  Zap,
+  Shield,
+  Search,
   Bell,
-  Search
+  Settings,
+  LayoutDashboard
 } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { UserButton } from "@clerk/nextjs";
-import { ActivityStream } from "@/components/ai/ActivityStream";
-import { GlobalCommandHUD } from "./GlobalCommandHUD";
-
-interface NavItemProps {
-  href: string;
-  icon: React.ElementType;
-  label: string;
-  active?: boolean;
-}
-
-const NavItem = ({ href, icon: Icon, label, active }: NavItemProps) => (
-  <Link href={href}>
-    <motion.div
-      whileHover={{ scale: 1.02, x: 4 }}
-      whileTap={{ scale: 0.98 }}
-      className={cn(
-        "group flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-300",
-        active 
-          ? "bg-primary/20 text-primary border border-primary/20 neon-glow-cyan" 
-          : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
-      )}
-    >
-      <Icon className={cn("w-5 h-5", active ? "text-primary" : "text-muted-foreground group-hover:text-foreground")} />
-      <span className="text-sm font-medium tracking-wide">{label}</span>
-      {active && (
-        <motion.div 
-          layoutId="activeNav"
-          className="ml-auto w-1 h-1 rounded-full bg-primary"
-        />
-      )}
-    </motion.div>
-  </Link>
-);
+import { cn } from "@/lib/core/utils";
+import { Button } from "@/components/ui/button";
 
 export function MissionControlShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
-  const [systemState, setSystemState] = useState<"idle" | "processing" | "alert">("idle");
-
-  // Mock system state changes
-  useEffect(() => {
-    if (pathname?.includes("meeting")) setSystemState("processing");
-    else setSystemState("idle");
-  }, [pathname]);
+  const { isLoaded, isSignedIn } = useUser();
+  const isLandingPage = pathname === "/";
+  const isMeetingPage = pathname?.startsWith("/meeting/");
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden font-sans selection:bg-primary/30">
-      {/* --- LEFT PANEL: CONTEXT NAVIGATION --- */}
-      <aside className="w-64 flex flex-col glass-border bg-black/20 backdrop-blur-xl z-50">
-        <div className="p-6">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-primary to-secondary flex items-center justify-center neon-glow-cyan">
-              <Terminal className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-lg tracking-tight text-foreground group-hover:text-primary transition-colors">WorkSync</span>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold">Mission Control</span>
-            </div>
-          </Link>
-        </div>
+    <div className="flex h-screen bg-[#020617] text-slate-100 overflow-hidden font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
+      {/* Background Neon Orbs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-20">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600/30 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-600/30 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
+      </div>
 
-        <nav className="flex-1 px-4 space-y-2 mt-4 custom-scrollbar overflow-y-auto">
-          <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/50 font-bold px-3 mb-4">Core Systems</div>
-          <NavItem href="/dashboard" icon={LayoutDashboard} label="Command Deck" active={pathname === "/dashboard"} />
-          <NavItem href="/meetings/live" icon={Mic2} label="Live Intel" active={pathname?.includes("/meeting")} />
-          <NavItem href="/tasks" icon={CheckSquare} label="Task Ops" active={pathname === "/tasks"} />
-          <NavItem href="/pull-requests" icon={GitPullRequest} label="Code Review" active={pathname === "/pull-requests"} />
-          
-          <div className="pt-8 text-[10px] uppercase tracking-[0.2em] text-muted-foreground/50 font-bold px-3 mb-4">Personnel</div>
-          <NavItem href="/team" icon={Users} label="Team Nexus" active={pathname === "/team"} />
-        </nav>
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col relative h-full overflow-hidden">
+        {/* Top Header HUD: Only show on non-landing pages */}
+        {!isLandingPage && (
+          <header className={cn(
+            "h-20 flex items-center justify-between px-8 bg-white/2 backdrop-blur-md border-b border-white/5 relative z-10 shrink-0",
+            isMeetingPage && "h-16 px-6 border-none" // Slimmer header for meeting rooms
+          )}>
+            <div className="flex items-center gap-6">
+              <Link href="/" className="flex items-center gap-2 group">
+                <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/20 group-hover:scale-105 transition-transform">
+                  <Zap className="w-5 h-5 text-white fill-white/20" />
+                </div>
+                <span className="text-sm font-black uppercase tracking-widest text-white hidden sm:block">WorkSync</span>
+              </Link>
+              
+              <div className="h-6 w-px bg-white/10" />
 
-        <div className="p-4 mt-auto border-t border-white/5 bg-white/2">
-          <NavItem href="/settings" icon={Settings} label="System Config" active={pathname === "/settings"} />
-          <div className="mt-4 flex items-center justify-between px-3 py-2 bg-white/5 rounded-xl border border-white/5">
-            <UserButton afterSignOutUrl="/" appearance={{ elements: { userButtonAvatarBox: "w-8 h-8 rounded-lg" } }} />
-            <div className="flex flex-col ml-3 flex-1 overflow-hidden">
-              <span className="text-xs font-medium truncate">System Admin</span>
-              <div className="flex items-center gap-1.5">
-                <div className={cn(
-                  "w-1.5 h-1.5 rounded-full animate-pulse",
-                  systemState === "idle" ? "bg-green-500" : "bg-primary"
-                )} />
-                <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">
-                  {systemState === "idle" ? "Online" : "Processing"}
-                </span>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors group">
+                <Search className="w-4 h-4 text-slate-500 group-hover:text-indigo-400" />
+                <span className="text-xs font-bold text-slate-400 group-hover:text-white mr-8 hidden md:block">Command Center...</span>
+                <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded border border-white/10 text-[10px] text-slate-500 font-mono">⌘K</kbd>
               </div>
             </div>
-          </div>
-        </div>
-      </aside>
 
-      {/* --- CENTER: ACTIVE WORKSPACE --- */}
-      <main className="flex-1 relative flex flex-col min-w-0 bg-[#080808]">
-        {/* TOP BAR: GLOBAL COMMAND HUD */}
-        <header className="h-16 flex items-center justify-between px-8 glass-border border-l-0 border-r-0 bg-black/10 backdrop-blur-md z-40">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-muted-foreground hover:text-foreground cursor-pointer transition-all group">
-              <CommandIcon className="w-4 h-4" />
-              <span className="text-xs font-semibold tracking-wide">Command Intel</span>
-              <kbd className="ml-2 px-1.5 py-0.5 rounded bg-white/10 text-[10px] font-mono">⌘K</kbd>
-            </div>
-            
-            <div className="h-4 w-px bg-white/10" />
-            
-            <div className="flex items-center gap-4 text-xs font-medium text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-primary" />
-                <span className="text-foreground font-bold">82%</span>
-                <span>System Load</span>
-              </div>
-            </div>
-          </div>
+            <div className="flex items-center gap-4">
+               {/* Authorized User Section Moved to Header since Sidebar is gone */}
+               <div className="flex items-center gap-3 pr-4 border-r border-white/10">
+                 {isLoaded && isSignedIn ? (
+                   <>
+                     <div className="hidden sm:flex flex-col items-end">
+                       <span className="text-[10px] font-bold text-white uppercase tracking-tight">Authorized</span>
+                       <span className="text-[9px] text-indigo-400 uppercase font-mono leading-none">Project Lead</span>
+                     </div>
+                     <UserButton 
+                       appearance={{
+                         elements: {
+                           avatarBox: "w-9 h-9 border border-white/10 rounded-xl"
+                         }
+                       }}
+                     />
+                   </>
+                 ) : isLoaded ? (
+                   <SignInButton mode="modal">
+                     <Button variant="ghost" className="text-xs text-indigo-400 font-bold">Sign In</Button>
+                   </SignInButton>
+                 ) : (
+                   <div className="w-9 h-9 rounded-xl bg-white/5 animate-pulse" />
+                 )}
+               </div>
 
-          <div className="flex items-center gap-4">
-            <div className="relative group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-              <input 
-                type="text" 
-                placeholder="Search global nexus..." 
-                className="bg-white/5 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 w-64 transition-all"
-              />
+               <div className="flex items-center gap-3">
+                 <div className="relative">
+                   <div className="absolute top-0 right-0 w-2 h-2 bg-indigo-500 rounded-full border-2 border-[#020617] z-20" />
+                   <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors">
+                     <Bell className="w-5 h-5 text-slate-400" />
+                   </div>
+                 </div>
+                 <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors hidden sm:flex">
+                   <Settings className="w-5 h-5 text-slate-400" />
+                 </div>
+               </div>
             </div>
-            
-            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 cursor-pointer transition-all group">
-              <Bell className="w-5 h-5 text-muted-foreground group-hover:text-foreground" />
-              <div className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-red-500 neon-glow-purple" />
-            </div>
-          </div>
-        </header>
+          </header>
+        )}
 
-        {/* CONTENT AREA */}
-        <div className="flex-1 overflow-y-auto hud-scrollbar relative p-8">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={pathname}
-              initial={{ opacity: 0, y: 10, filter: "blur(10px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: -10, filter: "blur(10px)" }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
-            >
-              {children}
-            </motion.div>
-          </AnimatePresence>
+        {/* Dynamic Page Content */}
+        <div className={cn(
+          "flex-1 overflow-y-auto custom-scrollbar relative",
+          isLandingPage ? "p-0" : "px-8 py-8",
+          isMeetingPage && "p-0 overflow-hidden" // Full-bleed for meetings
+        )}>
+           <div className={cn(
+             "relative z-10 mx-auto",
+             isLandingPage || isMeetingPage ? "w-full h-full" : "max-w-7xl"
+           )}>
+             {children}
+           </div>
         </div>
       </main>
-
-      {/* --- RIGHT PANEL: AI ACTIVITY STREAM --- */}
-      <AnimatePresence>
-        {isRightPanelOpen && (
-          <motion.aside
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 320, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            className="glass-border bg-black/20 backdrop-blur-xl z-50 flex flex-col relative"
-          >
-            <button 
-              onClick={() => setIsRightPanelOpen(false)}
-              className="absolute top-6 right-6 p-1.5 rounded-lg hover:bg-white/5 text-muted-foreground transition-all z-10"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-            
-            <div className="flex-1 overflow-hidden">
-              <ActivityStream />
-            </div>
-
-          </motion.aside>
-        )}
-      </AnimatePresence>
-
-      {!isRightPanelOpen && (
-        <button 
-          onClick={() => setIsRightPanelOpen(true)}
-          className="absolute right-0 top-1/2 -translate-y-1/2 p-1.5 rounded-l-xl bg-white/5 border border-r-0 border-white/10 text-muted-foreground hover:text-foreground transition-all z-50"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-      )}
     </div>
   );
 }

@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "WorkSyncAI | Mission Control",
-  description: "AI-powered workspace orchestration for the year 2030",
+  title: "WorkSyncAI Intelligence",
+  description: "Autonomous AI Orchestration Command Center",
 };
 
 export default function RootLayout({
@@ -30,13 +30,12 @@ export default function RootLayout({
       <html
         lang="en"
         className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
-        style={{ colorScheme: "dark" }}
       >
-        <body className="min-h-full flex flex-col bg-background text-foreground">
+        <body className="min-h-full flex flex-col bg-[#020617]">
           <MissionControlShell>
             {children}
           </MissionControlShell>
-          <Toaster position="top-center" richColors />
+          <Toaster position="top-center" richColors theme="dark" />
         </body>
       </html>
     </ClerkProvider>

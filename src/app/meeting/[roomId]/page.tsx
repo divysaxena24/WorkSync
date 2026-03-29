@@ -7,9 +7,97 @@ import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { LiveKitRoom, useLocalParticipant, useRemoteParticipants, useRoomContext, GridLayout, ParticipantTile, useTracks, ControlBar, Chat } from '@livekit/components-react';
+import { LiveKitRoom, useLocalParticipant, useRemoteParticipants, useRoomContext, GridLayout, ParticipantTile, useTracks, ControlBar, useChat } from '@livekit/components-react';
 import { DataPacket_Kind, Room, Participant, Track } from "livekit-client";
 import '@livekit/components-styles';
+
+// NEW: Custom Multi-line Chat Component
+const CustomChat = () => {
+  const { chatMessages, send, isSending } = useChat();
+  const [message, setMessage] = useState("");
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
+
+  const handleSend = () => {
+    if (message.trim() && !isSending) {
+      send(message.trim());
+      setMessage("");
+    }
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-transparent overflow-hidden">
+      <div 
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto px-4 py-2 space-y-3 custom-scrollbar flex flex-col justify-end"
+      >
+        <div className="flex-1" /> {/* Spacer to push messages to bottom */}
+        {chatMessages.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center opacity-20 text-center p-6 mt-20">
+             <MessageSquare className="w-12 h-12 mb-4" />
+             <p className="text-xs uppercase tracking-widest">No messages yet</p>
+          </div>
+        ) : (
+          chatMessages.map((msg, i) => (
+            <div key={i} className="flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-tighter">
+                  {msg.from?.name || msg.from?.identity || "Participant"}
+                </span>
+                <span className="text-[9px] text-slate-500 font-mono">
+                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-2xl rounded-tl-none p-3 text-sm text-slate-200 backdrop-blur-md max-w-[90%] wrap-break-word whitespace-pre-wrap">
+                {msg.message}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+      
+      <div className="p-4 pt-2 border-t border-white/5 bg-slate-950/20 backdrop-blur-xl">
+        <div className="relative group">
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder="Type a message..."
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all resize-none min-h-[44px] max-h-[120px] custom-scrollbar"
+            rows={1}
+            style={{ height: 'auto' }}
+            onInput={(e: any) => {
+              e.target.style.height = 'auto';
+              e.target.style.height = e.target.scrollHeight + 'px';
+            }}
+          />
+          <button
+            onClick={handleSend}
+            disabled={!message.trim() || isSending}
+            className="absolute right-2 bottom-2 p-2 rounded-lg bg-indigo-500 text-white disabled:opacity-50 disabled:bg-slate-800 transition-all hover:bg-indigo-600 shadow-lg shadow-indigo-500/20"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+        <p className="text-[9px] text-slate-600 mt-2 ml-1 uppercase tracking-widest font-medium">
+          Enter to send • Shift + Enter for newline
+        </p>
+      </div>
+    </div>
+  );
+};
 
 // NEW: Decoupled sidebar component to prevent re-renders of the video room
 // NEW: Decoupled sidebar component with glassmorphic styling
@@ -60,11 +148,13 @@ const TranscriptionFeed = memo(({ transcript, interimTranscript, activeTab, onTa
               {transcript ? (
                 <div className="text-slate-300 whitespace-pre-wrap divide-y divide-white/5">
                   {transcript.split('\n').filter((l: string) => l.trim()).map((line: string, i: number) => (
-                    <div key={i} className="py-2 animate-in fade-in slide-in-from-left-2 duration-500">
-                      <span className="text-indigo-400 font-bold mr-2">
-                        {line.split(']:')[0] + ']:'}
-                      </span>
-                      <span className="text-slate-300">{line.split(']:')[1] || ''}</span>
+                    <div key={i} className="py-3 px-1 animate-in fade-in slide-in-from-left-2 duration-500 hover:bg-white/5 rounded-lg transition-colors">
+                      <div className="flex items-start gap-2">
+                        <span className="text-indigo-400 font-bold shrink-0">
+                          {line.split(']:')[0] + ']:'}
+                        </span>
+                        <span className="text-slate-300 wrap-break-word leading-relaxed">{line.split(']:')[1] || ''}</span>
+                      </div>
                     </div>
                   ))}
                   {interimTranscript && (
@@ -82,8 +172,8 @@ const TranscriptionFeed = memo(({ transcript, interimTranscript, activeTab, onTa
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col overflow-hidden bg-transparent lk-chat-container h-full">
-            <Chat />
+          <div className="flex-1 flex flex-col overflow-hidden bg-transparent h-full">
+            <CustomChat />
           </div>
         )}
       </div>
@@ -356,13 +446,13 @@ const MeetingContent = memo(({
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col overflow-hidden bg-[#020617] relative">
-        <div className="flex-1 overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 bg-[#020617] relative">
+        <div className="flex-1 min-h-0 relative">
           {renderParticipants()}
         </div>
         
-        {/* Floating Control Bar */}
-        <div className="absolute bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-40 px-3 md:px-6 py-2 md:py-3 bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-2 group transition-all hover:bg-slate-900/80 hover:scale-[1.02]">
+        {/* Floating Control Bar - Positioning it slightly higher to ensure it's above any browser chrome */}
+        <div className="absolute bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 z-40 px-3 md:px-6 py-2 md:py-3 bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-2 group transition-all hover:bg-slate-900/90 hover:scale-[1.02]">
           <ControlBar variation="minimal" controls={{ leave: false }} />
         </div>
       </div>
@@ -675,7 +765,7 @@ export default function SharedMeetingPage() {
   if (!isLoaded || (token === "" && user)) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-indigo-500 w-12 h-12" /></div>;
 
   return (
-    <div className="flex flex-col h-screen bg-slate-950 overflow-hidden">
+    <div className="flex flex-col h-full bg-slate-950 overflow-hidden">
       <div className="flex-1 flex overflow-hidden">
         <LiveKitRoom
           key={token}

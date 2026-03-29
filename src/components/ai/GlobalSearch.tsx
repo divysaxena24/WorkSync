@@ -58,16 +58,16 @@ export function GlobalSearch() {
             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
               <Search className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
             </div>
-            <div className="w-full md:w-80 bg-slate-100 border-none rounded-2xl py-2.5 pl-11 pr-4 text-xs font-bold text-slate-500 flex items-center justify-between group-hover:bg-indigo-50 transition-all">
+            <div className="w-full md:w-80 bg-white/5 border border-white/10 rounded-2xl py-2.5 pl-11 pr-4 text-xs font-bold text-slate-400 flex items-center justify-between group-hover:bg-white/10 transition-all">
                <span>Search across meetings...</span>
-               <Badge variant="outline" className="text-[8px] bg-white border-none shadow-sm">AI POWERED</Badge>
+               <Badge variant="outline" className="text-[8px] bg-indigo-500/20 border-none shadow-sm text-indigo-400">AI POWERED</Badge>
             </div>
           </div>
         }
       />
       
-      <DialogContent className="max-w-2xl bg-white border-none shadow-2xl p-0 overflow-hidden sm:rounded-3xl">
-        <form onSubmit={handleSearch} className="p-6 border-b border-slate-100">
+      <DialogContent className="max-w-2xl bg-[#020617]/90 backdrop-blur-2xl border border-white/10 shadow-3xl p-0 overflow-hidden sm:rounded-3xl">
+        <form onSubmit={handleSearch} className="p-6 border-b border-white/5">
           <div className="relative">
              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-indigo-500" />
              <Input 
@@ -75,7 +75,7 @@ export function GlobalSearch() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Ask anything (e.g., 'What was decided about the auth refactor?')"
-                className="pl-12 h-14 bg-slate-50 border-none text-base font-medium rounded-2xl focus-visible:ring-2 focus-visible:ring-indigo-500/20 shadow-inner"
+                className="pl-12 h-14 bg-white/5 border border-white/10 text-base font-medium rounded-2xl focus-visible:ring-2 focus-visible:ring-indigo-500/20 shadow-inner text-white"
              />
              <Button 
                 type="submit"
@@ -108,8 +108,8 @@ export function GlobalSearch() {
                      </div>
                      <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500">AI Synthesized Intelligence</span>
                   </div>
-                  <div className="text-lg font-bold text-slate-800 leading-relaxed p-6 rounded-3xl bg-indigo-50/50 border border-indigo-100 relative">
-                     <div className="absolute top-4 right-4 text-[10px] font-black text-indigo-400 bg-white px-2 py-0.5 rounded shadow-sm border border-indigo-50">CONFIDENCE: {Math.round(result.confidence * 100)}%</div>
+                  <div className="text-lg font-bold text-white leading-relaxed p-6 rounded-3xl bg-indigo-500/10 border border-white/10 relative">
+                     <div className="absolute top-4 right-4 text-[10px] font-black text-indigo-400 bg-slate-950 px-2 py-0.5 rounded shadow-sm border border-white/5">CONFIDENCE: {Math.round(result.confidence * 100)}%</div>
                      {result.answer}
                   </div>
                </div>
@@ -119,12 +119,12 @@ export function GlobalSearch() {
                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Verifiable Sources</span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                        {result.sources.map((src: any, i: number) => (
-                         <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-3 group cursor-default hover:bg-white hover:shadow-md transition-all">
-                            <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center">
+                         <div key={i} className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3 group cursor-default hover:bg-white/10 hover:shadow-md transition-all">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-white/10 flex items-center justify-center">
                                {src.type === 'meeting' ? <MessageSquare className="w-4 h-4 text-slate-400" /> : <FileText className="w-4 h-4 text-slate-400" />}
                             </div>
                             <div className="flex-1 min-w-0">
-                               <div className="text-xs font-bold text-slate-900 truncate">{src.title}</div>
+                               <div className="text-xs font-bold text-white truncate">{src.title}</div>
                                <div className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">{src.date}</div>
                             </div>
                          </div>

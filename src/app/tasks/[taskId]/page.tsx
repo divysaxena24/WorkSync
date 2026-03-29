@@ -74,8 +74,8 @@ export default async function TaskDetailPage({ params }: { params: { taskId: str
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-500 hover:bg-green-600';
-      case 'approved': return 'bg-green-500 hover:bg-green-600';
+      case 'completed': return 'bg-emerald-500 hover:bg-emerald-600';
+      case 'approved': return 'bg-emerald-500 hover:bg-emerald-600';
       case 'needs_improvement': return 'bg-yellow-500 hover:bg-yellow-600';
       case 'submitted': return 'bg-blue-500 hover:bg-blue-600';
       case 'in_progress': return 'bg-indigo-500 hover:bg-indigo-600';
@@ -85,149 +85,170 @@ export default async function TaskDetailPage({ params }: { params: { taskId: str
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 selection:bg-indigo-500/30">
+    <div className="min-h-screen bg-[#020617] text-slate-300 selection:bg-indigo-500/30">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-30">
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors group">
+      <div className="bg-white/2 backdrop-blur-md border-b border-white/5 sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/dashboard" className="flex items-center gap-2 text-slate-400 hover:text-indigo-400 transition-colors group">
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            <span className="text-sm font-bold uppercase tracking-widest leading-none">Back to Hub</span>
+            <span className="text-xs font-black uppercase tracking-widest leading-none">Command Hub</span>
           </Link>
-          <div className="flex items-center gap-3">
-            <Badge variant="outline" className="border-indigo-100 bg-indigo-50/50 text-indigo-700 font-bold px-3 py-1">
+          <div className="flex items-center gap-6">
+            <div className="hidden md:flex items-center gap-2">
+               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+               <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Sync Status: Nominal</span>
+            </div>
+            <Badge variant="outline" className="border-indigo-500/20 bg-indigo-500/10 text-indigo-400 font-bold px-3 py-1">
               {task.priority.toUpperCase()} PRIORITY
             </Badge>
           </div>
         </div>
       </div>
 
-      <main className="max-w-5xl mx-auto px-4 py-8 md:py-12 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        {/* Task Title Section */}
-        <div className="space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                 <Badge variant="outline" className="text-[10px] font-black tracking-widest bg-slate-100 border-none px-2 py-0.5">TASK ARCHIVE</Badge>
-                 <span className="text-[10px] text-slate-400 font-mono">#{task.id.slice(0, 8)}</span>
-              </div>
-              <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-slate-900 uppercase italic leading-none">
-                {task.title}
-              </h1>
+      <main className="max-w-7xl mx-auto px-6 py-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        {/* Title & Actions Bar */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-4 border-b border-white/5">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+               <Badge variant="outline" className="text-[10px] font-black tracking-widest bg-white/5 border-none px-2 py-0.5 text-slate-500 uppercase">Mission Archive</Badge>
+               <span className="text-[10px] text-slate-600 font-mono">ID: {task.id.slice(0, 12)}</span>
             </div>
-            <div className="flex items-center gap-4">
-               {task.blocker && (
-                 <Badge variant="outline" className="border-red-500/50 text-red-500 bg-red-500/10 px-4 py-2 font-bold tracking-wider uppercase text-xs">
-                   Blocked By: {task.blocker.title}
-                 </Badge>
-               )}
-               <TaskStatusControl taskId={task.id} currentStatus={task.status} />
-               <Badge className={`${getStatusColor(task.status)} border-none px-6 py-2.5 text-xs font-black tracking-[0.2em] shadow-lg shadow-indigo-500/20`}>
-                 {task.status.replace('_', ' ').toUpperCase()}
-               </Badge>
-            </div>
+            <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white uppercase italic leading-none">
+              {task.title}
+            </h1>
+          </div>
+          <div className="flex items-center gap-4">
+             <TaskStatusControl taskId={task.id} currentStatus={task.status} />
+             <div className="h-10 w-px bg-white/10 mx-2 hidden md:block" />
+             <Badge className={`${getStatusColor(task.status)} border-none px-6 py-3 text-xs font-black tracking-[0.2em] shadow-xl shadow-indigo-500/20`}>
+               {task.status.replace('_', ' ').toUpperCase()}
+             </Badge>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
+        {/* MISSION STATUS HUD (New Horizontal HUD) */}
+        <Card className="glass-card border-none bg-indigo-500/[0.02] overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-0 divide-y md:divide-y-0 md:divide-x divide-white/5">
+             {/* Gatekeeper Detail */}
+             <div className="p-6 flex items-start gap-4 hover:bg-white/[0.02] transition-colors">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
+                   <ShieldCheck className="w-6 h-6 text-indigo-400" />
+                </div>
+                <div>
+                   <div className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-1">Status Protocol</div>
+                   <div className="text-sm font-black text-white uppercase">Gatekeeper Active</div>
+                   <div className="text-[10px] text-slate-500 font-bold mt-0.5">Verifying mission alignment</div>
+                </div>
+             </div>
+
+             {/* Expanded Horizontal Timeline */}
+             <div className="md:col-span-3 p-6 flex items-center bg-white/[0.01]">
+                <TaskTimeline currentStatus={task.status} submissions={submissions} />
+             </div>
+          </div>
+        </Card>
+
+        {/* MAIN MISSION GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* LEFT COLUMN: Specification & Submissions (Wide) */}
+          <div className="lg:col-span-8 space-y-8">
+            
             {/* Task Context/Description */}
-            <Card className="border-none shadow-sm bg-white overflow-hidden group">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-indigo-500" /> Task Specification
+            <Card className="glass-card border-none overflow-hidden group">
+              <CardHeader className="pb-4 flex flex-row items-center justify-between border-b border-white/5">
+                <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-indigo-500" /> Technical Specification
                 </CardTitle>
+                <div className="flex items-center gap-4">
+                   <div className="flex flex-col items-end">
+                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Resource Fit</span>
+                      <span className="text-xs font-black text-white">{Math.round((task.resourceFitScore || 0) * 100)}% Match</span>
+                   </div>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 text-slate-700 leading-relaxed font-semibold text-lg">
-                  {task.description || "Refer to the meeting intelligence for full specifications."}
+              <CardContent className="p-0">
+                <div className="p-8 text-xl font-bold text-white leading-relaxed border-b border-white/5 bg-white/[0.01]">
+                  {task.description || "Refer to the meeting intelligence for full mission objectives."}
                 </div>
 
-                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="p-4 rounded-xl bg-indigo-50/30 border border-indigo-100/50">
-                       <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1">Owner</div>
-                       <div className="text-sm font-black text-slate-900 flex items-center gap-2"><User className="w-3 h-3" /> {task.user?.name || task.owner}</div>
+                 <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/5">
+                    <div className="p-6 hover:bg-white/[0.02] transition-colors">
+                       <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><User className="w-3 h-3" /> Designated Owner</div>
+                       <div className="text-sm font-black text-white uppercase">{task.user?.name || task.owner}</div>
                     </div>
-                    <div className="p-4 rounded-xl bg-orange-50/30 border border-orange-100/50">
-                       <div className="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-1">Due Date</div>
-                       <div className="text-sm font-black text-slate-900 flex items-center gap-2"><Calendar className="w-3 h-3" /> {task.deadline ? new Date(task.deadline).toLocaleDateString('en-US') : 'ASAP'}</div>
+                    <div className="p-6 hover:bg-white/[0.02] transition-colors">
+                       <div className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><Calendar className="w-3 h-3" /> Deployment Deadline</div>
+                       <div className="text-sm font-black text-white uppercase">{task.deadline ? new Date(task.deadline).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }) : 'ASAP'}</div>
                     </div>
-                    <div className="p-4 rounded-xl bg-rose-50/30 border border-rose-100/50">
-                       <div className="text-[10px] font-bold text-rose-400 uppercase tracking-widest mb-1">SLA Risk</div>
-                       <div className={`text-sm font-black flex items-center gap-2 ${task.slaRisk === 'high' ? 'text-rose-600' : task.slaRisk === 'medium' ? 'text-orange-500' : 'text-green-600'}`}>
-                         <AlertCircle className="w-3 h-3" /> {task.slaRisk?.toUpperCase() || 'LOW'}
-                       </div>
-                    </div>
-                    <div className="p-4 rounded-xl bg-emerald-50/30 border border-emerald-100/50">
-                       <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-1">Resource Fit</div>
-                       <div className="text-sm font-black text-slate-900 flex items-center gap-2">
-                         <ShieldCheck className="w-3 h-3" /> {Math.round((task.resourceFitScore || 0) * 100)}%
+                    <div className="p-6 hover:bg-white/[0.02] transition-colors">
+                       <div className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><AlertCircle className="w-3 h-3" /> Risk Threshold</div>
+                       <div className={`text-sm font-black uppercase tracking-wide flex items-center gap-2 ${task.slaRisk === 'high' ? 'text-rose-400' : task.slaRisk === 'medium' ? 'text-orange-400' : 'text-emerald-400'}`}>
+                         {task.slaRisk?.toUpperCase() || 'LOW'} EXPOSURE
                        </div>
                     </div>
                  </div>
 
                  {task.needsClarification && (
-                   <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 animate-pulse ring-2 ring-amber-500/20">
+                   <div className="m-6 p-5 rounded-2xl bg-amber-500/5 border border-amber-500/20 ring-1 ring-amber-500/10">
                      <div className="flex items-start gap-3">
-                       <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                       <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                          <AlertCircle className="w-4 h-4 text-amber-500" />
+                       </div>
                        <div>
-                         <div className="text-xs font-black text-amber-800 uppercase tracking-widest">Autonomous Clarification Required</div>
-                         <p className="text-sm text-amber-700 font-bold mt-1">"{task.clarificationQuestion}"</p>
+                         <div className="text-[9px] font-black text-amber-500 uppercase tracking-widest">Active Clarification Loop</div>
+                         <p className="text-sm text-amber-100 font-bold mt-1.5 italic">"{task.clarificationQuestion}"</p>
                        </div>
                      </div>
                    </div>
                  )}
-                
-                {task.meeting && (
-                  <Link href={`/meeting/${task.meetingId}`} className="block p-4 rounded-xl border border-dashed border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 transition-all group/meeting">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center group-hover/meeting:border-indigo-200 transition-all">
-                          <History className="w-4 h-4 text-slate-400 group-hover/meeting:text-indigo-500 transition-colors" />
-                        </div>
-                        <div>
-                          <div className="text-xs font-black text-slate-900 uppercase">View Meeting Context</div>
-                          <div className="text-[10px] text-slate-400 font-medium">Trace back to the source transcript</div>
-                        </div>
-                      </div>
-                      <ArrowLeft className="w-4 h-4 rotate-180 text-slate-400 group-hover/meeting:translate-x-1 transition-all" />
-                    </div>
-                  </Link>
-                )}
               </CardContent>
             </Card>
 
-            {/* Submissions History & AI Feed */}
-            <Card className="border-none shadow-sm bg-white overflow-hidden">
-               <CardHeader className="pb-0">
-                  <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                    <History className="w-4 h-4" /> Final Evaluation Logic
-                  </CardTitle>
-               </CardHeader>
-               <CardContent className="p-4 space-y-6">
-                {submissions.length === 0 ? (
-                  <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                    <Code className="w-12 h-12 text-slate-200 mx-auto mb-2" />
-                    <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Awaiting First Submission</p>
-                  </div>
-                ) : (
-                  submissions.map((sub: any) => (
-                     <div key={sub.id} className="p-4 sm:p-6 rounded-3xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-xl transition-all space-y-6 group/sub">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                           <div className="flex items-center gap-4">
-                              <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-xl sm:text-2xl font-black shadow-sm ${sub.score >= 80 ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'}`}>
-                                 {sub.score || '--'}
+            {/* Atomic Decomposition (Moved to Main for spacing) */}
+            <SubtaskManager taskId={task.id} />
+
+            {/* Evaluation History Feed */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between px-2">
+                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                   <History className="w-3.5 h-3.5" /> Intelligence Feed
+                 </h3>
+                 <Badge variant="outline" className="text-[9px] text-slate-600 border-white/5">{submissions.length} Records</Badge>
+              </div>
+
+              {submissions.length === 0 ? (
+                <Card className="glass-card border-none p-12 text-center">
+                  <Code className="w-12 h-12 text-white/5 mx-auto mb-4" />
+                  <div className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Awaiting Primary Submission</div>
+                </Card>
+              ) : (
+                submissions.map((sub: any) => (
+                   <Card key={sub.id} className="glass-card border-none overflow-hidden hover:bg-white/[0.02] transition-colors">
+                      <div className="p-6 space-y-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                           <div className="flex items-center gap-5">
+                              <div className={cn(
+                                "w-16 h-16 rounded-2xl flex flex-col items-center justify-center font-black transition-all",
+                                sub.score >= 80 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-white/5 text-slate-500 border border-white/5'
+                              )}>
+                                 <div className="text-[10px] uppercase leading-none mb-1">Score</div>
+                                 <div className="text-2xl leading-none">{sub.score || '--'}</div>
                               </div>
                               <div>
-                                <div className="text-[10px] sm:text-xs font-black text-slate-900 flex items-center gap-2 uppercase tracking-wide">
-                                  {sub.submissionType} Submission
-                                  <Badge variant="outline" className={`px-2 py-0.5 text-[8px] sm:text-[9px] font-black uppercase border-none ${sub.evaluationStatus === 'approved' ? 'bg-green-500 text-white' : 'bg-orange-400 text-white'}`}>
+                                <div className="flex items-center gap-3 mb-1.5">
+                                  <span className="text-sm font-black text-white uppercase tracking-tight">{sub.submissionType} DEPLOYMENT</span>
+                                  <Badge className={cn(
+                                    "px-2 py-0.5 text-[9px] font-black uppercase border-none",
+                                    sub.evaluationStatus === 'approved' ? 'bg-emerald-500 text-white' : 'bg-orange-500 text-white'
+                                  )}>
                                      {sub.evaluationStatus}
                                   </Badge>
                                 </div>
-                                <div className="text-[10px] text-slate-400 font-mono mt-0.5 sm:mt-1 uppercase flex items-center gap-2">
-                                  {new Date(sub.createdAt).toLocaleString()}
+                                <div className="text-[10px] text-slate-500 font-mono uppercase flex items-center gap-3">
+                                  <span>{new Date(sub.createdAt).toLocaleString()}</span>
                                   {sub.updatedAt && new Date(sub.updatedAt).getTime() > new Date(sub.createdAt).getTime() + 1000 && (
-                                    <span className="text-indigo-500 font-black tracking-widest text-[8px] bg-indigo-50 px-1 rounded">EDITED</span>
+                                    <Badge variant="outline" className="text-[8px] border-indigo-500/30 text-indigo-400 font-black">REVISED</Badge>
                                   )}
                                 </div>
                               </div>
@@ -240,94 +261,66 @@ export default async function TaskDetailPage({ params }: { params: { taskId: str
                                  isOwner={sub.userId === currentUser.id}
                                  isManager={currentUser.role === 'MANAGER'}
                               />
-                              <a href={sub.githubUrl} target="_blank" rel="noreferrer" className="w-full sm:w-auto flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-[10px] font-bold text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm">
-                                 <ExternalLink className="w-3 h-3" /> OPEN IN GITHUB
-                              </a>
+                              <Button asChild variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10 text-[10px] font-black uppercase h-9 shadow-sm">
+                                <a href={sub.githubUrl} target="_blank" rel="noreferrer">
+                                   <ExternalLink className="w-3.5 h-3.5 mr-2" /> REPO TRACE
+                                </a>
+                              </Button>
                            </div>
                         </div>
-                       
-                       {/* Submission Note */}
-                       {sub.submission_note && (
-                        <div className="p-4 rounded-xl bg-orange-50/30 border border-orange-100/50 relative shadow-sm">
-                           <div className="text-[10px] font-black uppercase text-orange-600 mb-1 flex items-center gap-1.5">
-                              <User className="w-3 h-3" /> Developer Context
-                           </div>
-                           <p className="text-xs text-slate-700 italic leading-relaxed">"{sub.submission_note}"</p>
-                        </div>
-                       )}
 
-                        {/* AI Technical Analysis */}
-                        <div className="space-y-6">
-                           <div className="text-sm font-medium text-slate-700 leading-relaxed bg-white p-6 rounded-2xl border border-slate-100 shadow-sm relative group/tech">
-                              <div className="absolute -top-2.5 left-6 bg-indigo-600 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest flex items-center gap-1 group-hover/tech:scale-105 transition-transform">
-                                <Sparkles className="w-2.5 h-2.5" /> Technical Analysis
+                        {/* AI Insight Stack */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           {/* Technical Analysis */}
+                           <div className="md:col-span-2 p-5 rounded-2xl bg-indigo-500/[0.03] border border-white/5 relative group/tech">
+                              <div className="flex items-center gap-2 mb-3 text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+                                 <Sparkles className="w-3.5 h-3.5" /> AI Quality Assessment
                               </div>
-                              <div className="whitespace-pre-wrap">
-                                {sub.feedback || "AI analysis algorithm in progress..."}
+                              <div className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
+                                {sub.feedback || "Agent is processing current deployment artifacts..."}
                               </div>
                            </div>
 
-                           {/* Manager Insight Card */}
+                           {/* Insight & Issues */}
                            {sub.manager_suggestion && (
-                             <div className="p-6 rounded-2xl bg-slate-900 text-white border border-slate-800 shadow-xl relative overflow-hidden ring-1 ring-white/10">
-                                <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                   <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" /> Manager's Key Insight
-                                </div>
-                                <div className="text-sm font-bold leading-relaxed relative z-10 italic">
-                                   "{sub.manager_suggestion}"
-                                </div>
+                             <div className="p-5 rounded-2xl bg-emerald-500/[0.03] border border-white/5">
+                                <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2">Manager Directive</div>
+                                <div className="text-sm font-bold italic text-white">"{sub.manager_suggestion}"</div>
                              </div>
                            )}
-                           
-                           {/* Issues and Suggestions - Side by Side on md+, Stacked on mobile */}
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             {sub.issues && (
-                              <div className="p-5 rounded-2xl bg-white border border-red-100 shadow-sm space-y-3">
-                                 <div className="text-[10px] font-black text-red-500 uppercase tracking-[0.1em] flex items-center gap-2">
-                                    <AlertCircle className="w-3 h-3" /> Gaps Identified
+
+                           {sub.issues && (
+                              <div className="p-5 rounded-2xl bg-rose-500/[0.03] border border-white/5">
+                                 <div className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                    <AlertCircle className="w-3 h-3" /> Integrity Gaps
                                  </div>
-                                 <ul className="space-y-3">
+                                 <ul className="space-y-2">
                                     {(typeof sub.issues === 'string' ? JSON.parse(sub.issues) : sub.issues).map((issue: string, i: number) => (
-                                      <li key={i} className="text-[11px] font-bold text-slate-600 flex items-start gap-2.5">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1 flex-shrink-0" />
+                                      <li key={i} className="text-[10px] font-bold text-slate-400 flex items-start gap-2">
+                                        <div className="w-1 h-1 rounded-full bg-rose-500 mt-1.5 shrink-0" />
                                         {issue}
                                       </li>
                                     ))}
                                  </ul>
                               </div>
-                             )}
-
-                             {sub.suggestions && (
-                               <div className="p-5 rounded-2xl bg-white border border-indigo-100 shadow-sm space-y-3">
-                                  <div className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.1em] flex items-center gap-2">
-                                     <Zap className="w-3 h-3" /> Optimization Logic
-                                  </div>
-                                  <ul className="space-y-3">
-                                     {(typeof sub.suggestions === 'string' ? JSON.parse(sub.suggestions) : sub.suggestions).map((sug: string, i: number) => (
-                                       <li key={i} className="text-[11px] font-bold text-slate-600 flex items-start gap-2.5">
-                                         <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1 flex-shrink-0" />
-                                         {sug}
-                                       </li>
-                                     ))}
-                                  </ul>
-                               </div>
-                             )}
-                           </div>
+                           )}
                         </div>
-                     </div>
-                  ))
-                )}
-               </CardContent>
-            </Card>
+                      </div>
+                   </Card>
+                ))
+              )}
+            </div>
           </div>
 
-          <div className="space-y-8">
-            {/* Submission Area */}
+          {/* RIGHT COLUMN: Deployment & Intelligence (Narrow) */}
+          <div className="lg:col-span-4 space-y-8">
+            
+            {/* Task Submission Dispatch */}
             {task.status !== 'completed' && task.ownerId === (await sql`SELECT id FROM "User" WHERE "clerkId" = ${clerkId} LIMIT 1`)[0]?.id && (
-              <Card className="border-none shadow-2xl shadow-indigo-500/10 bg-white ring-1 ring-slate-200">
+              <Card className="glass-card border-none bg-indigo-600/[0.03] shadow-2xl shadow-indigo-500/10">
                 <CardHeader>
-                  <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
-                    <GitPullRequest className="w-4 h-4 text-indigo-500" /> Dispatch Submission
+                  <CardTitle className="text-xs font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
+                    <GitPullRequest className="w-4 h-4" /> Dispatch Center
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -336,83 +329,69 @@ export default async function TaskDetailPage({ params }: { params: { taskId: str
               </Card>
             )}
 
-            {/* System Monitoring */}
-            <Card className="border-none shadow-sm bg-slate-900 text-white overflow-hidden">
-               <div className="p-6 space-y-6">
-                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center">
-                       <ShieldCheck className="w-5 h-5 text-indigo-400" />
-                    </div>
-                    <div>
-                       <div className="text-xs font-black uppercase tracking-wider">Gatekeeper Active</div>
-                       <div className="text-[10px] text-slate-400 font-mono">Verifying mission alignment</div>
-                    </div>
-                 </div>
-
-                 <TaskTimeline currentStatus={task.status} submissions={submissions} />
-                 
-                 <div className="pt-6 space-y-6">
-                    <SubtaskManager taskId={task.id} />
-                    <ResourceOptimization taskId={task.id} />
-                 </div>
-                 
-                 <div className="pt-6 border-t border-white/5 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                       <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-                       <span className="text-[8px] font-black uppercase tracking-widest text-slate-300">Sync Pipeline: Operational</span>
-                    </div>
-                    <Badge variant="outline" className="text-[8px] bg-white/5 border-white/10 text-slate-400">V1.0.4</Badge>
-                 </div>
-                   <div className="space-y-4 pt-4 border-t border-white/10">
-                    <div className="flex justify-between items-center text-xs">
-                       <span className="text-slate-400 font-bold uppercase tracking-widest leading-none">Status Level</span>
-                       <Badge variant="outline" className="border-indigo-400/30 text-indigo-300 font-black">{task.status.toUpperCase()}</Badge>
-                    </div>
-                    <div className="flex justify-between items-center text-xs">
-                       <span className="text-slate-400 font-bold uppercase tracking-widest leading-none">Visibility</span>
-                       <span className="text-slate-200 font-bold">Public Space</span>
-                    </div>
-                 </div>
-               </div>
-            </Card>
-
-            {/* AI Decision Trail */}
-            <Card className="border-none shadow-sm bg-white">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2 font-bold">
-                  <Bot className="w-5 h-5 text-indigo-500" /> AI Decision Trail
+            {/* AI Decision Trail - Re-styled for compactness */}
+            <Card className="glass-card border-none">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-indigo-500" /> Decision Trail
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4 p-4">
                 {agentLogs.length === 0 ? (
-                  <div className="text-center py-6 text-slate-400 italic text-sm">
-                    No agent decisions recorded yet for this task.
-                  </div>
+                  <div className="text-center py-8 text-slate-600 italic text-xs font-bold uppercase tracking-widest">Awaiting Logs</div>
                 ) : (
                   agentLogs.map((log: any) => (
-                    <div key={log.id} className="p-4 rounded-2xl border border-slate-100 bg-slate-50/80 space-y-2">
+                    <div key={log.id} className="p-4 rounded-xl border border-white/5 bg-white/[0.02] space-y-2.5 group">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Brain className="w-3.5 h-3.5 text-indigo-500" />
-                          <div className="flex flex-col">
-                            <span className="text-xs font-black uppercase tracking-widest text-indigo-600">{log.agentName}</span>
-                            <span className="text-[8px] font-mono text-slate-400">{log.model || "Optimized Model"}</span>
+                        <div className="flex items-center gap-2.5">
+                          <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                             <Brain className="w-3.5 h-3.5 text-indigo-400" />
+                          </div>
+                          <div>
+                            <div className="text-[10px] font-black uppercase tracking-widest text-white leading-none mb-0.5">{log.agentName}</div>
+                            <div className="text-[8px] font-mono text-slate-500 leading-none">{log.model || "Optimized"}</div>
                           </div>
                         </div>
-                        <span className="text-[10px] text-slate-400 font-mono">{log.durationMs}ms</span>
+                        <span className="text-[9px] text-slate-600 font-mono tracking-tighter">{log.durationMs}ms</span>
                       </div>
-                      <p className="text-xs text-slate-600 leading-relaxed">{log.reasoning}</p>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                      <p className="text-[11px] text-slate-400 leading-relaxed font-medium line-clamp-3 group-hover:line-clamp-none transition-all">{log.reasoning}</p>
+                      <div className="pt-1 flex items-center gap-2">
+                        <div className="flex-1 bg-white/5 h-1 rounded-full overflow-hidden">
                           <div className="bg-indigo-500 h-full" style={{ width: `${Math.round(log.confidence * 100)}%` }} />
                         </div>
-                        <span className="text-[10px] font-bold text-indigo-600">{Math.round(log.confidence * 100)}%</span>
+                        <span className="text-[10px] font-black text-indigo-500">{Math.round(log.confidence * 100)}%</span>
                       </div>
                     </div>
                   ))
                 )}
               </CardContent>
             </Card>
+
+            {/* Secondary Utilities */}
+            <div className="space-y-6">
+               <ResourceOptimization taskId={task.id} />
+               
+               <div className="p-6 rounded-3xl border border-white/5 bg-white/[0.01] space-y-4">
+                  <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">Sync: Operational</span>
+                     </div>
+                     <span className="text-[8px] font-mono text-slate-600">V.1.0.84</span>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center text-[10px]">
+                       <span className="text-slate-500 font-black uppercase tracking-widest">Priority Index</span>
+                       <Badge variant="outline" className="border-indigo-500/30 text-indigo-400 font-black px-2 py-0">{task.priority.toUpperCase()}</Badge>
+                    </div>
+                    <div className="flex justify-between items-center text-[10px]">
+                       <span className="text-slate-500 font-black uppercase tracking-widest">Visibility</span>
+                       <span className="text-white font-black">AUTHORIZED ONLY</span>
+                    </div>
+                  </div>
+               </div>
+            </div>
           </div>
         </div>
       </main>

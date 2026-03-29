@@ -1,135 +1,106 @@
 "use client";
 
-import React from "react";
 import { motion } from "framer-motion";
 import { 
   Eraser, 
-  BrainCircuit, 
-  UserPlus, 
+  Target, 
+  Hammer, 
+  Users, 
   AlertTriangle, 
-  SearchCode, 
-  ShieldCheck,
-  ChevronRight,
-  Zap
+  ShieldCheck, 
+  ArrowRight,
+  BrainCircuit
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 
 const AGENTS = [
-  { id: "cleaner", name: "Cleaner", icon: Eraser, description: "Contextual De-noising", color: "text-blue-400" },
-  { id: "architect", name: "Architect", icon: BrainCircuit, description: "Structure Extraction", color: "text-purple-400" },
-  { id: "matcher", name: "Matcher", icon: UserPlus, description: "Personnel Alignment", color: "text-cyan-400" },
-  { id: "predictor", name: "Predictor", icon: AlertTriangle, description: "Risk Analysis", color: "text-amber-400" },
-  { id: "auditor", name: "Auditor", icon: SearchCode, description: "Compliance Audit", color: "text-indigo-400" },
-  { id: "validator", name: "Validator", icon: ShieldCheck, description: "Final Verdict", color: "text-emerald-400" },
+  { id: "cleaner",   name: "Contextual Cleaner", icon: Eraser,        model: "Llama 3.1 8B",  color: "indigo" },
+  { id: "miner",     name: "Decision Miner",     icon: Target,        model: "Llama 3.1 8B",  color: "cyan" },
+  { id: "architect", name: "Task Architect",     icon: Hammer,        model: "Llama 3.3 70B", color: "purple" },
+  { id: "matcher",   name: "Resource Matcher",   icon: Users,         model: "Llama 3.3 70B", color: "blue" },
+  { id: "predictor", name: "SLA Predictor",      icon: AlertTriangle, model: "Llama 3.3 70B", color: "amber" },
+  { id: "validator", name: "Final Validator",    icon: ShieldCheck,   model: "Llama 3.3 70B", color: "emerald" },
 ];
 
-interface AgentNodeProps {
-  agent: typeof AGENTS[0];
-  status: "idle" | "thinking" | "complete";
-  confidence?: number;
-  active?: boolean;
-}
-
-const AgentNode = ({ agent: Agent, status, confidence, active }: AgentNodeProps) => (
-  <motion.div 
-    layout
-    className={cn(
-      "relative group flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all duration-500",
-      active ? "bg-primary/5 border-primary/40 glass-panel neon-glow-cyan" : "bg-white/5 border-white/5 grayscale opacity-50"
-    )}
-  >
-    {status === "thinking" && (
-      <motion.div 
-        className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full animate-pulse shadow-[0_0_10px_var(--primary)]" 
-      />
-    )}
-    
-    <div className={cn(
-      "w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-500 group-hover:scale-110",
-      active ? "bg-primary/10" : "bg-white/5"
-    )}>
-      <Agent.icon className={cn("w-6 h-6", active ? Agent.color : "text-muted-foreground")} />
-    </div>
-
-    <div className="text-center">
-      <div className="text-xs font-bold tracking-tight text-foreground">{Agent.name}</div>
-      <div className="text-[10px] text-muted-foreground font-medium mt-0.5 whitespace-nowrap">{Agent.description}</div>
-    </div>
-
-    {active && confidence && (
-      <div className="mt-2 w-full bg-white/5 rounded-full h-1 overflow-hidden">
-        <motion.div 
-          initial={{ width: 0 }}
-          animate={{ width: `${confidence}%` }}
-          className={cn("h-full", confidence > 90 ? "bg-emerald-500" : "bg-primary")}
-        />
-      </div>
-    )}
-
-    {active && confidence && (
-      <div className="text-[9px] font-mono text-primary font-bold">{confidence}% CONFIDENCE</div>
-    )}
-  </motion.div>
-);
-
-export function AgentPipelineViewer({ activeStep = 0, stepsStatus = [] }: { activeStep?: number, stepsStatus?: ("idle" | "thinking" | "complete")[] }) {
+export function AgentPipelineViewer({ activeStep }: { activeStep?: string }) {
   return (
-    <div className="w-full py-8 px-4 relative overflow-hidden glass-panel rounded-3xl">
-      <div className="flex items-center justify-between mb-8 px-2">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-            <Zap className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold tracking-tight">Neural Process Stream</h3>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Autonomous Multi-Agent Orchestration</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 text-[10px] font-mono text-muted-foreground">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          SYSTEM STABLE • LATENCY 124MS
-        </div>
-      </div>
+    <div className="w-full py-8 px-4 glass-card rounded-3xl border border-white/5 relative overflow-hidden">
+      {/* Decorative Background Blur */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-px bg-linear-to-r from-transparent via-indigo-500/20 to-transparent" />
+      
+      <div className="flex items-center justify-between relative z-10 max-w-5xl mx-auto">
+        {AGENTS.map((agent, index) => {
+          const isActive = activeStep === agent.id;
+          const isPast = activeStep && AGENTS.findIndex(a => a.id === activeStep) > index;
 
-      <div className="flex items-center justify-between relative gap-2">
-        {/* Connecting Lines (Background) */}
-        <div className="absolute top-10 left-0 right-0 h-[2px] bg-white/5 -z-10" />
-        
-        {AGENTS.map((agent, i) => (
-          <React.Fragment key={agent.id}>
-            <AgentNode 
-              agent={agent} 
-              active={i <= activeStep}
-              status={i === activeStep ? "thinking" : i < activeStep ? "complete" : "idle"}
-              confidence={i < activeStep ? 90 + Math.floor(Math.random() * 9) : i === activeStep ? 75 : undefined}
-            />
-            {i < AGENTS.length - 1 && (
-              <div className="flex-1 flex justify-center mt-[-30px]">
-                <ChevronRight className={cn(
-                  "w-4 h-4 transition-colors duration-500",
-                  i < activeStep ? "text-primary shadow-[0_0_10px_var(--primary)]" : "text-white/10"
-                )} />
+          return (
+            <div key={agent.id} className="flex items-center flex-1 last:flex-none">
+              <div className="flex flex-col items-center gap-3 group">
+                {/* Icon Circle */}
+                <motion.div 
+                  initial={false}
+                  animate={{ 
+                    scale: isActive ? 1.1 : 1,
+                    boxShadow: isActive ? `0 0 25px hsla(var(--neon-indigo), 0.4)` : "none"
+                  }}
+                  className={cn(
+                    "w-14 h-14 rounded-2xl flex items-center justify-center border transition-all duration-500",
+                    isActive 
+                      ? "bg-white/10 border-white/20 text-white" 
+                      : isPast
+                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                        : "bg-white/2 border-white/5 text-slate-500"
+                  )}
+                >
+                  <agent.icon className={cn(
+                    "w-7 h-7",
+                    isActive ? "neon-glow-indigo animate-pulse" : ""
+                  )} />
+                </motion.div>
+
+                {/* Agent Labels */}
+                <div className="flex flex-col items-center text-center">
+                  <span className={cn(
+                    "text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-300",
+                    isActive ? "text-indigo-400" : isPast ? "text-emerald-500/70" : "text-slate-600"
+                  )}>
+                    {agent.name}
+                  </span>
+                  <span className="text-[8px] font-mono font-bold text-slate-500/50 uppercase">
+                    {agent.model}
+                  </span>
+                </div>
               </div>
-            )}
-          </React.Fragment>
-        ))}
+
+              {/* Connector Arrow */}
+              {index < AGENTS.length - 1 && (
+                <div className="flex-1 flex justify-center px-2">
+                  <ArrowRight className={cn(
+                    "w-4 h-4 transition-colors duration-500",
+                    isPast ? "text-emerald-500/40" : "text-white/5"
+                  )} />
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
-      {/* Decision Log Summary Overlay */}
-      <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mt-8 p-4 rounded-2xl bg-black/40 border border-white/5 font-mono text-[10px] space-y-2"
-      >
-        <div className="flex items-center justify-between text-muted-foreground/50 border-b border-white/5 pb-2 mb-2">
-          <span>PIPELINE_RESOLVER_V1.1</span>
-          <span>EXECUTION_TRACE</span>
+      <div className="mt-8 flex items-center justify-center gap-6">
+        <div className="flex items-center gap-2">
+          <BrainCircuit className="w-4 h-4 text-indigo-400" />
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+            Pipeline Activity Log: <span className="text-white">Standby</span>
+          </span>
         </div>
-        <div className="flex gap-3">
-          <span className="text-primary truncate">[09:44:23] AGENT({AGENTS[activeStep]?.id.toUpperCase()}):</span>
-          <span className="text-foreground animate-pulse">Running heuristic analysis on current context buffer...</span>
+        <div className="h-4 w-px bg-white/10" />
+        <div className="flex items-center gap-1">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+            All Models Online
+          </span>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

@@ -79,45 +79,41 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
     if (dbUser.role === "MANAGER") {
       return (
-        <div className="min-h-screen bg-slate-50 p-4 md:p-8">
-          <ManagerDashboard
-            company={dbUser.company}
-            tasks={allTasks}
-            alerts={alerts}
-            escalations={escalations}
-            performance={performance}
-            allProfiles={JSON.parse(JSON.stringify(allProfiles))}
-            activeProfileId={dbUser.id}
-          />
-        </div>
+        <ManagerDashboard
+          company={dbUser.company}
+          tasks={allTasks}
+          alerts={alerts}
+          escalations={escalations}
+          performance={performance}
+          allProfiles={JSON.parse(JSON.stringify(allProfiles))}
+          activeProfileId={dbUser.id}
+        />
       );
     } else {
       const myTasks = allTasks.filter((t: any) => t.ownerId === dbUser.id);
       return (
-        <div className="min-h-screen bg-slate-50 p-8">
-          <EmployeeDashboard 
-            user={dbUser} 
-            tasks={myTasks} 
-            allProfiles={JSON.parse(JSON.stringify(allProfiles))}
-            activeProfileId={dbUser.id}
-          />
-        </div>
+        <EmployeeDashboard 
+          user={dbUser} 
+          tasks={myTasks} 
+          allProfiles={JSON.parse(JSON.stringify(allProfiles))}
+          activeProfileId={dbUser.id}
+        />
       );
     }
   } catch (error) {
     console.error("Dashboard Error:", error);
     return (
-      <div className="min-h-screen flex items-center justify-center p-8 bg-slate-50">
-        <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl border border-slate-200 text-center">
-           <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="h-[calc(100vh-160px)] flex items-center justify-center p-8">
+        <div className="max-w-md w-full glass-panel p-8 rounded-2xl border border-white/10 text-center">
+           <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
            </div>
-           <h1 className="text-2xl font-bold text-slate-900 mb-2">WorkSync is syncing...</h1>
-           <p className="text-slate-600 mb-6">We're having trouble reaching the database. Please try refreshing or check back in a minute.</p>
-           <a href="/dashboard" className="inline-flex items-center justify-center w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-all">
-             Try Again
+           <h1 className="text-2xl font-bold text-white mb-2">WorkSync is syncing...</h1>
+           <p className="text-slate-400 mb-6">We're having trouble reaching the database. Intelligence core is attempting to reconnect.</p>
+           <a href="/dashboard" className="inline-flex items-center justify-center w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-600/20">
+             Re-initialize System
            </a>
         </div>
       </div>
