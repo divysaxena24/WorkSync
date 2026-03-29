@@ -40,6 +40,7 @@ model Meeting {
 model Task {
   id         String    @id @default(cuid())
   title      String
+  description String?
   owner      String
   ownerId    String?
   user       User?     @relation(fields: [ownerId], references: [id])
@@ -50,6 +51,12 @@ model Task {
   meeting    Meeting?  @relation(fields: [meetingId], references: [id])
   evaluation Evaluation?
   createdAt  DateTime  @default(now())
+
+  // Autonomous Pipeline Insights
+  slaRisk             String?   // low | medium | high
+  resourceFitScore    Float?    // 0.0 - 1.0
+  needsClarification  Boolean   @default(false)
+  clarificationQuestion String?
 
   // Dependencies / Blockers
   blockedById String?
@@ -86,6 +93,7 @@ model AgentDecisionLog {
   output     String?
   confidence Float    @default(0)
   reasoning  String?
+  model      String?
   durationMs Int      @default(0)
   meetingId  String?
   taskId     String?

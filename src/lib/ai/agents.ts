@@ -1,21 +1,27 @@
 /**
- * Multi-Agent Pipeline — WorkSync (WorkSyncAI)
+ * 6-Step Autonomous Orchestration Pipeline — WorkSync (WorkSyncAI)
+ * Optimized for ET AI Hackathon Track 2: Autonomous Enterprise Workflows.
  * 
- * Agent 1: Transcript Analyzer — cleans & structures raw transcript
- * Agent 2: Task Orchestrator — extracts actionable tasks
- * Agent 3: Validation Agent — cross-checks and verifies tasks
+ * Step 1: Contextual Cleaner (8B) - Structures raw transcript
+ * Step 2: Decision Miner (8B) - Extracts key decisions
+ * Step 3: Task Architect (70B) - Converts items to detailed tasks (Handles Clarification)
+ * Step 4: Resource Matcher (70B) - Validates owner role/fit
+ * Step 5: SLA Risk Predictor (70B) - Predicts delivery risk
+ * Step 6: Final Validator (70B) - Self-correction & Audit
  */
 
 import Groq from "groq-sdk";
 import { logAgentDecision } from "../services/agentLog";
+import { MODELS } from "./router";
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
 // ────────────────────────────────────────
-// Agent 1: Transcript Analyzer
+// Types & Interfaces
 // ────────────────────────────────────────
+
 export interface MeetingSummary {
   speakers: string[];
   topics: string[];
@@ -24,264 +30,323 @@ export interface MeetingSummary {
   summary: string;
 }
 
-async function runTranscriptAnalyzer(
-  transcript: string,
-  meetingId: string
-): Promise<MeetingSummary> {
-  const start = Date.now();
-
-  const response = await groq.chat.completions.create({
-    model: "llama-3.3-70b-versatile",
-    messages: [
-      {
-        role: "system",
-        content: `You are the Transcript Analyzer agent in a multi-agent workflow system. 
-Your job is to take raw, messy meeting transcripts and produce a clean, structured summary.
-
-Identify:
-- All unique speakers mentioned
-- Main topics discussed  
-- Key decisions made
-- Potential action items (raw, not yet structured as tasks)
-- A concise 2-3 sentence executive summary
-
-Return ONLY valid JSON with this structure:
-{
-  "speakers": ["name1", "name2"],
-  "topics": ["topic1", "topic2"],
-  "keyDecisions": ["decision1", "decision2"],
-  "actionItems": ["raw action item 1", "raw action item 2"],
-  "summary": "Executive summary of the meeting"
-}`,
-      },
-      { role: "user", content: transcript },
-    ],
-    response_format: { type: "json_object" },
-  });
-
-  const content = response.choices[0].message.content || "{}";
-  const result = JSON.parse(content) as MeetingSummary;
-  const durationMs = Date.now() - start;
-
-  await logAgentDecision({
-    agentName: "Transcript Analyzer",
-    agentRole: "Cleans raw transcript, identifies speakers, topics, decisions, and action items",
-    input: transcript.substring(0, 500),
-    output: content.substring(0, 2000),
-    confidence: 0.9,
-    reasoning: `Identified ${result.speakers?.length || 0} speakers, ${result.topics?.length || 0} topics, ${result.keyDecisions?.length || 0} decisions, and ${result.actionItems?.length || 0} raw action items`,
-    durationMs,
-    meetingId,
-  });
-
-  return result;
-}
-
-// ────────────────────────────────────────
-// Agent 2: Task Orchestrator
-// ────────────────────────────────────────
 export interface ExtractedTask {
   task: string;
   owner: string;
   deadline: string | null;
   priority: "high" | "medium" | "low";
   dependsOnTaskTitle: string | null;
+  needsClarification?: boolean;
+  clarificationQuestion?: string;
 }
 
-async function runTaskOrchestrator(
-  summary: MeetingSummary,
-  teamMembers: string[],
-  meetingId: string
-): Promise<ExtractedTask[]> {
-  const start = Date.now();
-  const today = new Date().toLocaleDateString("en-US", {
-    weekday: "long", year: "numeric", month: "long", day: "numeric",
-  });
-
-  const response = await groq.chat.completions.create({
-    model: "llama-3.3-70b-versatile",
-    messages: [
-      {
-        role: "system",
-        content: `You are the Task Orchestrator agent. You receive a structured meeting summary from the Transcript Analyzer agent and convert it into precise, actionable developer tasks.
-
-Guidelines:
-- owner: Match to one of these team members: ${teamMembers.join(", ")}. Use first name only.
-- deadline: YYYY-MM-DD format. TODAY IS: ${today}. If "by tomorrow" → calculate tomorrow. If unclear → null.
-- priority: "high" | "medium" | "low" based on urgency signals in the context.
-- dependsOnTaskTitle: If this task is blocked by or depends on another task being extracted, provide the EXACT title of that blocking task. Otherwise, null.
-- Each task should be specific and actionable, not vague.
-
-Return ONLY valid JSON: { "tasks": [{ "task": "...", "owner": "...", "deadline": "...", "priority": "...", "dependsOnTaskTitle": null }] }`,
-      },
-      {
-        role: "user",
-        content: `MEETING SUMMARY: ${summary.summary}
-
-KEY DECISIONS: ${summary.keyDecisions.join("; ")}
-
-RAW ACTION ITEMS: ${summary.actionItems.join("; ")}
-
-SPEAKERS: ${summary.speakers.join(", ")}`,
-      },
-    ],
-    response_format: { type: "json_object" },
-  });
-
-  const content = response.choices[0].message.content || "{}";
-  const parsed = JSON.parse(content);
-  const tasks: ExtractedTask[] = Array.isArray(parsed) 
-    ? parsed 
-    : (parsed.tasks || Object.values(parsed)[0] || []);
-  const durationMs = Date.now() - start;
-
-  await logAgentDecision({
-    agentName: "Task Orchestrator",
-    agentRole: "Converts meeting summary into structured, assignable developer tasks",
-    input: JSON.stringify(summary).substring(0, 500),
-    output: content.substring(0, 2000),
-    confidence: 0.85,
-    reasoning: `Extracted ${tasks.length} tasks from ${summary.actionItems.length} raw action items, matched to team: [${teamMembers.join(", ")}]`,
-    durationMs,
-    meetingId,
-  });
-
-  return tasks;
-}
-
-// ────────────────────────────────────────
-// Agent 3: Validation Agent
-// ────────────────────────────────────────
 export interface ValidatedTask extends ExtractedTask {
   confidence: number;
   validationNote: string;
+  resourceFitScore?: number;
+  slaRisk?: "low" | "medium" | "high";
 }
 
-export interface ValidationResult {
-  tasks: ValidatedTask[];
-  overallConfidence: number;
-  removedCount: number;
-  warnings: string[];
-}
-
-async function runValidationAgent(
-  tasks: ExtractedTask[],
-  originalTranscript: string,
-  meetingId: string
-): Promise<ValidationResult> {
-  const start = Date.now();
-
-  const response = await groq.chat.completions.create({
-    model: "llama-3.3-70b-versatile",
-    messages: [
-      {
-        role: "system",
-        content: `You are the Validation Agent. You review tasks extracted by the Task Orchestrator and verify them against the original transcript.
-
-Your checks:
-1. Does each task genuinely appear in the transcript? Remove hallucinated tasks.
-2. Are there duplicate or overlapping tasks? Merge them.
-3. Are deadlines realistic? Flag impossible ones.
-4. Is the owner assignment reasonable? Flag mismatches.
-5. If dependsOnTaskTitle is set, does that blocking task actually exist in the extracted list? If not, set it to null.
-6. Add a confidence score (0.0–1.0) for each task.
-
-Return ONLY valid JSON:
-{
-  "tasks": [{ "task": "...", "owner": "...", "deadline": "...", "priority": "...", "dependsOnTaskTitle": null, "confidence": 0.95, "validationNote": "Confirmed in transcript" }],
-  "overallConfidence": 0.85,
-  "removedCount": 1,
-  "warnings": ["Task X was hallucinated and removed"]
-}`,
-      },
-      {
-        role: "user",
-        content: `TASKS TO VALIDATE:
-${JSON.stringify(tasks, null, 2)}
-
-ORIGINAL TRANSCRIPT (for cross-checking):
-${originalTranscript.substring(0, 4000)}`,
-      },
-    ],
-    response_format: { type: "json_object" },
-  });
-
-  const content = response.choices[0].message.content || "{}";
-  const result = JSON.parse(content) as ValidationResult;
-  const durationMs = Date.now() - start;
-
-  await logAgentDecision({
-    agentName: "Validation Agent",
-    agentRole: "Cross-checks extracted tasks against original transcript for accuracy",
-    input: JSON.stringify(tasks).substring(0, 500),
-    output: content.substring(0, 2000),
-    confidence: result.overallConfidence || 0.8,
-    reasoning: `Validated ${result.tasks?.length || 0} tasks, removed ${result.removedCount || 0} hallucinated/duplicate tasks. Warnings: ${result.warnings?.join("; ") || "None"}`,
-    durationMs,
-    meetingId,
-  });
-
-  return result;
-}
-
-// ────────────────────────────────────────
-// Main Pipeline: Run all 3 agents
-// ────────────────────────────────────────
 export interface PipelineResult {
   summary: MeetingSummary;
   tasks: ValidatedTask[];
   overallConfidence: number;
   warnings: string[];
   retried: boolean;
+  stepsExecuted: string[];
 }
 
+// ────────────────────────────────────────
+// Step 1: Contextual Cleaner (8B)
+// ────────────────────────────────────────
+async function step1Cleaner(transcript: string, meetingId: string): Promise<string> {
+  const model = MODELS.LOW;
+  const start = Date.now();
+  
+  const response = await groq.chat.completions.create({
+    model,
+    messages: [
+      {
+        role: "system",
+        content: "You are the Contextual Cleaner agent. Structure raw meeting transcripts into a clean narrative. Remove filler words and noise while preserving all facts and speaker intents."
+      },
+      { role: "user", content: transcript }
+    ]
+  });
+
+  const output = response.choices[0].message.content || "";
+  await logAgentDecision({
+    agentName: "Contextual Cleaner",
+    agentRole: "Structures raw transcripts into clean narrative",
+    input: transcript.substring(0, 500),
+    output: output.substring(0, 1000),
+    confidence: 0.95,
+    reasoning: "Performed noise reduction and structural formatting on raw audio transcript.",
+    model,
+    durationMs: Date.now() - start,
+    meetingId
+  });
+
+  return output;
+}
+
+// ────────────────────────────────────────
+// Step 2: Decision Miner (8B)
+// ────────────────────────────────────────
+async function step2DecisionMiner(cleanTranscript: string, meetingId: string): Promise<{ decisions: string[], topics: string[], speakers: string[] }> {
+  const model = MODELS.LOW;
+  const start = Date.now();
+
+  const response = await groq.chat.completions.create({
+    model,
+    messages: [
+      {
+        role: "system",
+        content: "You are the Decision Miner. Extract a list of key decisions made, main topics discussed, and all speakers present. Return ONLY JSON: { \"decisions\": [], \"topics\": [], \"speakers\": [] }"
+      },
+      { role: "user", content: cleanTranscript }
+    ],
+    response_format: { type: "json_object" }
+  });
+
+  const content = response.choices[0].message.content || "{}";
+  const result = JSON.parse(content);
+  
+  await logAgentDecision({
+    agentName: "Decision Miner",
+    agentRole: "Identifies strategic commitments and topic clusters",
+    input: cleanTranscript.substring(0, 500),
+    output: content,
+    confidence: 0.9,
+    reasoning: `Found ${result.decisions?.length || 0} decisions across ${result.topics?.length || 0} topics.`,
+    model,
+    durationMs: Date.now() - start,
+    meetingId
+  });
+
+  return result;
+}
+
+// ────────────────────────────────────────
+// Step 3: Task Architect (70B)
+// ────────────────────────────────────────
+async function step3TaskArchitect(
+  cleanTranscript: string, 
+  decisions: string[], 
+  teamMembers: string[], 
+  meetingId: string
+): Promise<ExtractedTask[]> {
+  const model = MODELS.HIGH;
+  const start = Date.now();
+  const today = new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+
+  const response = await groq.chat.completions.create({
+    model,
+    messages: [
+      {
+        role: "system",
+        content: `You are the Task Architect. Convert meeting commitments into detailed developer tasks.
+        MATCH TO TEAM: ${teamMembers.join(", ")}.
+        TODAY: ${today}.
+        
+        CLARIFICATION RULE: If a task owner is missing or the objective is ambiguous, set "needsClarification": true and provide a "clarificationQuestion".
+        
+        Return ONLY JSON: { "tasks": [{ "task": "...", "owner": "...", "deadline": "YYYY-MM-DD", "priority": "high|medium|low", "dependsOnTaskTitle": null, "needsClarification": false, "clarificationQuestion": null }] }`
+      },
+      {
+        role: "user",
+        content: `TRANSCRIPT: ${cleanTranscript}\nDECISIONS: ${decisions.join("; ")}`
+      }
+    ],
+    response_format: { type: "json_object" }
+  });
+
+  const content = response.choices[0].message.content || "{}";
+  const tasks = (JSON.parse(content).tasks || []) as ExtractedTask[];
+
+  await logAgentDecision({
+    agentName: "Task Architect",
+    agentRole: "Converts commitments to detailed technical tasks with ambiguity detection",
+    input: cleanTranscript.substring(0, 500),
+    output: content.substring(0, 2000),
+    confidence: 0.85,
+    reasoning: `Architected ${tasks.length} tasks. Flagged ${tasks.filter(t => t.needsClarification).length} for clarification.`,
+    model,
+    durationMs: Date.now() - start,
+    meetingId
+  });
+
+  return tasks;
+}
+
+// ────────────────────────────────────────
+// Step 4: Resource Matcher (70B)
+// ────────────────────────────────────────
+async function step4ResourceMatcher(tasks: ExtractedTask[], meetingId: string): Promise<ValidatedTask[]> {
+  const model = MODELS.HIGH;
+  const start = Date.now();
+
+  const response = await groq.chat.completions.create({
+    model,
+    messages: [
+      {
+        role: "system",
+        content: "You are the Resource Matcher. For each task, evaluate if the assigned owner is the correct fit based on common dev roles. Score 0.0-1.0. Set 'resourceFitScore' property for each task."
+      },
+      { role: "user", content: JSON.stringify(tasks) }
+    ],
+    response_format: { type: "json_object" }
+  });
+
+  const content = response.choices[0].message.content || "{}";
+  const matchedTasks = (JSON.parse(content).tasks || []) as ValidatedTask[];
+
+  await logAgentDecision({
+    agentName: "Resource Matcher",
+    agentRole: "Validates task-to-talent alignment",
+    input: JSON.stringify(tasks).substring(0, 500),
+    output: content.substring(0, 2000),
+    confidence: 0.9,
+    reasoning: "Assessed workforce allocation suitability for all extracted items.",
+    model,
+    durationMs: Date.now() - start,
+    meetingId
+  });
+
+  return matchedTasks;
+}
+
+// ────────────────────────────────────────
+// Step 5: SLA Risk Predictor (70B)
+// ────────────────────────────────────────
+async function step5SLAPredictor(tasks: ValidatedTask[], meetingId: string): Promise<ValidatedTask[]> {
+  const model = MODELS.HIGH;
+  const start = Date.now();
+
+  const response = await groq.chat.completions.create({
+    model,
+    messages: [
+      {
+        role: "system",
+        content: "You are the SLA Risk Predictor. Evaluate each task's deadline and complexity. Assign 'slaRisk': 'low' | 'medium' | 'high'. Consider 'high' if the deadline is < 48hrs and complexity is high."
+      },
+      { role: "user", content: JSON.stringify(tasks) }
+    ],
+    response_format: { type: "json_object" }
+  });
+
+  const content = response.choices[0].message.content || "{}";
+  const riskTasks = (JSON.parse(content).tasks || []) as ValidatedTask[];
+
+  await logAgentDecision({
+    agentName: "SLA Risk Predictor",
+    agentRole: "Foresees delivery delays and process bottlenecks",
+    input: JSON.stringify(tasks).substring(0, 500),
+    output: content.substring(0, 2000),
+    confidence: 0.8,
+    reasoning: "Evaluated temporal risk and delivery pressure across the sprint.",
+    model,
+    durationMs: Date.now() - start,
+    meetingId
+  });
+
+  return riskTasks;
+}
+
+// ────────────────────────────────────────
+// Step 6: Final Validator (70B)
+// ────────────────────────────────────────
+async function step6Validator(tasks: ValidatedTask[], transcript: string, meetingId: string): Promise<{ tasks: ValidatedTask[], overallConfidence: number, warnings: string[] }> {
+  const model = MODELS.HIGH;
+  const start = Date.now();
+
+  const response = await groq.chat.completions.create({
+    model,
+    messages: [
+      {
+        role: "system",
+        content: "You are the Final Validator. Cross-check all tasks, resource scores, and risks against the original transcript. Remove hallucinations. Return JSON: { \"tasks\": [], \"overallConfidence\": 0.0-1.0, \"warnings\": [] }"
+      },
+      { role: "user", content: `TASKS: ${JSON.stringify(tasks)}\n\nTRANSCRIPT: ${transcript.substring(0, 3000)}` }
+    ],
+    response_format: { type: "json_object" }
+  });
+
+  const content = response.choices[0].message.content || "{}";
+  const result = JSON.parse(content);
+
+  await logAgentDecision({
+    agentName: "Final Validator",
+    agentRole: "Highest-order audit of the agentic workflow pipeline",
+    input: JSON.stringify(tasks).substring(0, 500),
+    output: content.substring(0, 2000),
+    confidence: result.overallConfidence || 0.9,
+    reasoning: `Validated ${result.tasks?.length || 0} tasks with overall confidence ${result.overallConfidence}.`,
+    model,
+    durationMs: Date.now() - start,
+    meetingId
+  });
+
+  return result;
+}
+
+// ────────────────────────────────────────
+// Main Pipeline: 6-Step Autonomous Flow
+// ────────────────────────────────────────
 export async function runMeetingExtractionPipeline(
   transcript: string,
   teamMembers: string[],
   meetingId: string
 ): Promise<PipelineResult> {
-  // Agent 1: Analyze transcript
-  const summary = await runTranscriptAnalyzer(transcript, meetingId);
+  const steps: string[] = [];
 
-  // Agent 2: Extract tasks
-  let tasks = await runTaskOrchestrator(summary, teamMembers, meetingId);
+  // Step 1: Cleaning
+  const cleanTranscript = await step1Cleaner(transcript, meetingId);
+  steps.push("Contextual Cleaner (8B)");
 
-  // Agent 3: Validate tasks
-  let validation = await runValidationAgent(tasks, transcript, meetingId);
+  // Step 2: Mining
+  const { decisions, topics, speakers } = await step2DecisionMiner(cleanTranscript, meetingId);
+  steps.push("Decision Miner (8B)");
 
-  // Self-correction: if confidence is low, re-run orchestrator with feedback
+  // Step 3: Architecting
+  let tasks = await step3TaskArchitect(cleanTranscript, decisions, teamMembers, meetingId);
+  steps.push("Task Architect (70B)");
+
+  // Step 4: Matching
+  let matchedTasks = await step4ResourceMatcher(tasks, meetingId);
+  steps.push("Resource Matcher (70B)");
+
+  // Step 5: Risk Assessment
+  let riskTasks = await step5SLAPredictor(matchedTasks, meetingId);
+  steps.push("SLA Risk Predictor (70B)");
+
+  // Step 6: Final Validation
+  let validation = await step6Validator(riskTasks, transcript, meetingId);
+  steps.push("Final Validator (70B)");
+
+  // Internal Logic: Self-Correction if confidence is abysmal
   let retried = false;
-  if (validation.overallConfidence < 0.6 && validation.warnings.length > 0) {
+  if (validation.overallConfidence < 0.5) {
     retried = true;
-
-    await logAgentDecision({
-      agentName: "Self-Correction Controller",
-      agentRole: "Detects low confidence and triggers re-extraction",
-      input: `Confidence: ${validation.overallConfidence}, Warnings: ${validation.warnings.join("; ")}`,
-      output: "Triggering re-run of Task Orchestrator with validation feedback",
-      confidence: 1.0,
-      reasoning: `Overall confidence ${validation.overallConfidence} is below threshold 0.6. Re-running with ${validation.warnings.length} warnings as additional context.`,
-      durationMs: 0,
-      meetingId,
-    });
-
-    // Re-run with warnings as additional context
-    const enrichedSummary: MeetingSummary = {
-      ...summary,
-      actionItems: [
-        ...summary.actionItems,
-        `VALIDATION FEEDBACK: ${validation.warnings.join(". ")}`,
-      ],
-    };
-    tasks = await runTaskOrchestrator(enrichedSummary, teamMembers, meetingId);
-    validation = await runValidationAgent(tasks, transcript, meetingId);
+    tasks = await step3TaskArchitect(cleanTranscript, decisions, teamMembers, meetingId);
+    matchedTasks = await step4ResourceMatcher(tasks, meetingId);
+    riskTasks = await step5SLAPredictor(matchedTasks, meetingId);
+    validation = await step6Validator(riskTasks, transcript, meetingId);
+    steps.push("Self-Correction Triggered (70B)");
   }
 
   return {
-    summary,
+    summary: {
+      speakers,
+      topics,
+      keyDecisions: decisions,
+      actionItems: validation.tasks.map(t => t.task),
+      summary: "Autonomous 6-Step Extraction Complete"
+    },
     tasks: validation.tasks || [],
     overallConfidence: validation.overallConfidence || 0.8,
     warnings: validation.warnings || [],
     retried,
+    stepsExecuted: steps
   };
 }

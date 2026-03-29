@@ -15,6 +15,7 @@ export interface AgentDecision {
   output: string;
   confidence: number;
   reasoning: string;
+  model?: string | null;
   durationMs: number;
   meetingId?: string | null;
   taskId?: string | null;
@@ -22,19 +23,19 @@ export interface AgentDecision {
 
 export async function logAgentDecision(decision: AgentDecision): Promise<string> {
   const id = createId();
-  const truncatedInput = decision.input.substring(0, 2000);
-  const truncatedOutput = decision.output.substring(0, 5000);
+  const truncatedInput = (decision.input || "").substring(0, 2000);
+  const truncatedOutput = (decision.output || "").substring(0, 5000);
 
   try {
     await sql`
       INSERT INTO "AgentDecisionLog" (
         "id", "agentName", "agentRole", "input", "output",
-        "confidence", "reasoning", "durationMs",
+        "confidence", "reasoning", "model", "durationMs",
         "meetingId", "taskId", "createdAt"
       ) VALUES (
         ${id}, ${decision.agentName}, ${decision.agentRole},
         ${truncatedInput}, ${truncatedOutput},
-        ${decision.confidence}, ${decision.reasoning}, ${decision.durationMs},
+        ${decision.confidence}, ${decision.reasoning}, ${decision.model || null}, ${decision.durationMs},
         ${decision.meetingId || null}, ${decision.taskId || null}, NOW()
       )
     `;

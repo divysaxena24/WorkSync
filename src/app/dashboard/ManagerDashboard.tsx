@@ -181,14 +181,28 @@ export function ManagerDashboard({
                     checked={selectedIds.includes(task.id)}
                     onChange={() => toggleSelect(task.id)}
                   />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-slate-800 text-sm truncate">{task.title}</div>
+                   <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <div className="font-semibold text-slate-800 text-sm truncate">{task.title}</div>
+                      {task.needsClarification && (
+                        <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[8px] uppercase tracking-widest px-1 py-0 h-4">Needs Clarification</Badge>
+                      )}
+                    </div>
                     <div className="flex items-center gap-3 mt-1 flex-wrap">
                       <span className="text-[10px] text-slate-500">👤 {task.user?.name || task.owner}</span>
-                      {task.deadline && <span className="text-[10px] text-slate-500">📅 {task.deadline}</span>}
-                      <Badge variant="outline" className={`text-[9px] border ${task.priority === "high" ? "bg-red-50 text-red-600 border-red-100" : "text-slate-400 border-slate-200"}`}>
-                        {task.priority}
-                      </Badge>
+                      {task.deadline && (
+                        <span className={`text-[10px] font-mono ${new Date(task.deadline) < new Date() ? 'text-rose-500 font-bold' : 'text-slate-500'}`}>
+                          📅 {task.deadline}
+                        </span>
+                      )}
+                      <div className="flex items-center gap-1.5 border-l border-slate-200 pl-3">
+                        <div className={`w-1.5 h-1.5 rounded-full ${task.slaRisk === 'high' ? 'bg-rose-500' : task.slaRisk === 'medium' ? 'bg-orange-400' : 'bg-emerald-400'}`} />
+                        <span className="text-[9px] font-black uppercase tracking-tight text-slate-400">Risk: {task.slaRisk || 'low'}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 border-l border-slate-200 pl-3">
+                        <ShieldCheck className="w-2.5 h-2.5 text-emerald-500" />
+                        <span className="text-[9px] font-black uppercase tracking-tight text-slate-400">Fit: {Math.round((task.resourceFitScore || 0) * 100)}%</span>
+                      </div>
                     </div>
                   </div>
                   <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
@@ -301,9 +315,12 @@ export function ManagerDashboard({
               {auditLogs.map((log: any) => (
                 <div key={log.id} className="p-4 rounded-2xl bg-slate-900/80 border border-white/5 space-y-2">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <Badge variant="outline" className={`text-[10px] font-bold uppercase tracking-widest border ${agentColor[log.agentName] || "bg-slate-800 text-slate-400 border-slate-700"}`}>
-                      {log.agentName}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                       <Badge variant="outline" className={`text-[10px] font-bold uppercase tracking-widest border ${agentColor[log.agentName] || "bg-slate-800 text-slate-400 border-slate-700"}`}>
+                         {log.agentName}
+                       </Badge>
+                       <span className="text-[8px] font-mono text-slate-600 uppercase tracking-widest">{log.model || "Optimized"}</span>
+                    </div>
                     <div className="flex items-center gap-3">
                       <span className={`text-[11px] font-black ${confidenceColor(log.confidence)}`}>
                         {Math.round(log.confidence * 100)}% confidence
@@ -313,7 +330,7 @@ export function ManagerDashboard({
                     </div>
                   </div>
                   {log.reasoning && (
-                    <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{log.reasoning}</p>
+                    <p className="text-[11px] text-slate-300 font-medium leading-relaxed line-clamp-2 italic opacity-80">"{log.reasoning}"</p>
                   )}
                 </div>
               ))}

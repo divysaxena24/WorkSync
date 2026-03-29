@@ -64,16 +64,37 @@ export async function POST(req: Request) {
     // Create tasks with pending_review status
     const createdTasks = [];
     for (const item of pipelineResult.tasks) {
-      const { task: title, owner, deadline, priority, dependsOnTaskTitle } = item;
+      const { 
+        task: title, 
+        owner, 
+        deadline, 
+        priority, 
+        dependsOnTaskTitle,
+        resourceFitScore,
+        slaRisk,
+        needsClarification,
+        clarificationQuestion
+      } = item;
       
       const matchedUser = companyUsers.find((u: any) => 
         u.name.toLowerCase().includes(owner.toLowerCase())
       ) as any;
 
-      // We store the original extracted item object on the DB record temporarily to use in the second pass
+      const taskId = createId();
+      // Use the 'task' text as description if no explicit description is provided by architect
+      const description = `Extracted from meeting ${meeting.id}: ${title}`;
+
       const newTaskResults = await sql`
-        INSERT INTO "Task" (id, title, owner, "ownerId", deadline, priority, status, "meetingId", "createdAt")
-        VALUES (${createId()}, ${title}, ${owner}, ${matchedUser ? matchedUser.id : null}, ${deadline}, ${priority || "medium"}, 'pending_review', ${meeting.id}, NOW())
+        INSERT INTO "Task" (
+          "id", "title", "description", "owner", "ownerId", 
+          "deadline", "priority", "status", "meetingId", "createdAt",
+          "resourceFitScore", "slaRisk", "needsClarification", "clarificationQuestion"
+        )
+        VALUES (
+          ${taskId}, ${title}, ${description}, ${owner}, ${matchedUser ? matchedUser.id : null}, 
+          ${deadline}, ${priority || "medium"}, 'pending_review', ${meeting.id}, NOW(),
+          ${resourceFitScore || 0}, ${slaRisk || "low"}, ${needsClarification || false}, ${clarificationQuestion || null}
+        )
         RETURNING *
       `;
       const newTask = newTaskResults[0];
