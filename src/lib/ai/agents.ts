@@ -149,7 +149,7 @@ async function step3TaskArchitect(
         MATCH TO TEAM: ${teamMembers.join(", ")}.
         TODAY: ${today}.
         
-        CLARIFICATION RULE: If a task owner is missing or the objective is ambiguous, set "needsClarification": true and provide a "clarificationQuestion".
+        CLARIFICATION RULE: If an action item's owner is missing, ambiguous (e.g., no clear owner among the 4 participants), or the objective is unclear, DO NOT guess the owner. Set "owner" to "Unassigned", set "needsClarification" to true, and provide a "clarificationQuestion" asking the team to specify who will own it.
         
         Return ONLY JSON: { "tasks": [{ "task": "...", "owner": "...", "deadline": "YYYY-MM-DD", "priority": "high|medium|low", "dependsOnTaskTitle": null, "needsClarification": false, "clarificationQuestion": null }] }`
       },

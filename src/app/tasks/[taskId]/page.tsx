@@ -28,6 +28,7 @@ import {
   Bot,
   Brain
 } from "lucide-react";
+import { cn } from "@/lib/core/utils";
 import Link from "next/link";
 
 export default async function TaskDetailPage({ params }: { params: { taskId: string } }) {
@@ -50,9 +51,11 @@ export default async function TaskDetailPage({ params }: { params: { taskId: str
     WHERE t.id = ${taskId}
     LIMIT 1
   `;
-  const task: any = tasks[0];
-
+  const task = tasks[0] as any;
   if (!task) redirect("/dashboard");
+
+  const isOwner = currentUser?.id === (task as any).ownerId;
+  const showSubmissionForm = (task?.status === "todo" || task?.status === "pending" || task?.status === "needs_improvement") && isOwner;
 
   const submissions = await sql`
     SELECT * FROM "task_submissions"
@@ -261,10 +264,8 @@ export default async function TaskDetailPage({ params }: { params: { taskId: str
                                  isOwner={sub.userId === currentUser.id}
                                  isManager={currentUser.role === 'MANAGER'}
                               />
-                              <Button asChild variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10 text-[10px] font-black uppercase h-9 shadow-sm">
-                                <a href={sub.githubUrl} target="_blank" rel="noreferrer">
-                                   <ExternalLink className="w-3.5 h-3.5 mr-2" /> REPO TRACE
-                                </a>
+                              <Button variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10 text-[10px] font-black uppercase h-9 shadow-sm" onClick={() => window.open(sub.githubUrl, '_blank')}>
+                                <ExternalLink className="w-3.5 h-3.5 mr-2" /> REPO TRACE
                               </Button>
                            </div>
                         </div>
@@ -316,8 +317,8 @@ export default async function TaskDetailPage({ params }: { params: { taskId: str
           <div className="lg:col-span-4 space-y-8">
             
             {/* Task Submission Dispatch */}
-            {task.status !== 'completed' && task.ownerId === (await sql`SELECT id FROM "User" WHERE "clerkId" = ${clerkId} LIMIT 1`)[0]?.id && (
-              <Card className="glass-card border-none bg-indigo-600/[0.03] shadow-2xl shadow-indigo-500/10">
+            {showSubmissionForm && (
+              <Card className="glass-card border-none overflow-hidden rounded-3xl animate-in slide-in-from-bottom-6 duration-700 bg-indigo-600/[0.03] shadow-2xl shadow-indigo-500/10">
                 <CardHeader>
                   <CardTitle className="text-xs font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
                     <GitPullRequest className="w-4 h-4" /> Dispatch Center

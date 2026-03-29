@@ -1,10 +1,19 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/core/neon";
-import { createId } from "@paralleldrive/cuid2";
+import { randomBytes } from "crypto";
 import { runFollowUpAgent } from "@/lib/ai/followUpAgent";
 import { sendFollowUpNudge } from "@/lib/integrations/notifications";
 
-export async function GET() {
+const createId = () => randomBytes(12).toString('hex');
+
+export const maxDuration = 300; 
+
+export async function GET(req: Request) {
+  const authHeader = req.headers.get('authorization');
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}` && process.env.NODE_ENV === 'production') {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
+
   try {
     // Find unstarted tasks from meetings older than 24h
     // that haven't been followed up on yet

@@ -81,3 +81,30 @@ export async function sendFollowUpNudge(userEmail: string, userName: string, tas
   `;
   await sendEmail(userEmail, `Follow-up on: ${taskTitle}`, html);
 }
+
+export async function sendMeetingSummaryEmail(emails: string[], meetingId: string, summary: string, actionItems: string[]) {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+      <h2 style="color: #4f46e5;">Meeting Summary & Action Items</h2>
+      <p>Hi Team,</p>
+      <p>WorkSync AI has automatically processed your recent meeting and generated the following summary:</p>
+      
+      <div style="background-color: #f8fafc; padding: 15px; border-left: 4px solid #4f46e5; margin: 20px 0;">
+        <p>${summary}</p>
+      </div>
+
+      <h3 style="color: #333;">Action Items Extracts:</h3>
+      <ul style="padding-left: 20px;">
+        ${actionItems.map(item => `<li style="margin-bottom: 8px;">${item}</li>`).join('')}
+      </ul>
+
+      <p style="margin-top: 20px;">Tasks have been automatically created in your project tracker. Please log in to WorkSync to view details.</p>
+    </div>
+  `;
+  
+  for (const email of emails) {
+    if(email) {
+      await sendEmail(email, `Meeting Summary & Action Items`, html);
+    }
+  }
+}

@@ -8,6 +8,8 @@ import { evaluateSubmission } from "@/lib/ai/evaluateSubmission";
 
 const createId = () => randomBytes(12).toString('hex');
 
+export const maxDuration = 60; // Allow AI evaluation to run for up to 60s
+
 export async function POST(req: Request) {
   try {
     const { userId: clerkId } = await auth();

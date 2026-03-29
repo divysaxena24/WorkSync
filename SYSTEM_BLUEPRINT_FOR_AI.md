@@ -9,7 +9,7 @@ This document is a technical blueprint of the **WorkSync AI** platform, designed
 **Objective**: Automate the administrative overhead of agile team management by synchronously capturing meeting intelligence and asynchronously verifying engineering output.
 **Core Workflow**:
 1.  **Capture**: Meeting $\rightarrow$ Transcription $\rightarrow$ Agentic Task Extraction.
-2.  **Coordinate**: Task Assignment $\rightarrow$ Work Submission (GitHub).
+2.  **Coordinate**: Contextual Task Assignment (with ambiguity detection) $\rightarrow$ Email Summaries $\rightarrow$ Work Submission (GitHub).
 3.  **Validate**: Agentic PR Review $\rightarrow$ Performance Scoring $\rightarrow$ Dashboard Transparency.
 4.  **Enforce**: "Follow-up" Agents $\rightarrow$ Automated Nudges $\rightarrow$ Escalation Alerts.
 
@@ -45,8 +45,9 @@ WorkSync AI operates through specialized **Multi-Agent Pipelines** rather than m
 ### A. The Meeting Intelligence Pipeline
 - **Entry Point**: `src/app/api/meeting/extract/route.ts`
 - **Agent 1: Transcript Analyzer**: Summarizes the unstructured meeting audio into a structured strategic narrative.
-- **Agent 2: Task Orchestrator**: Identifies action items, deadlines (e.g., "by Monday"), and owners based on team context.
+- **Agent 2: Task Orchestrator & Assignment**: Extracted tasks are contextually assigned to known team members. **Ambiguity Rule**: If an action item is ambiguous or lacks a clear owner among participants, it will be flagged as "Unassigned" and marked for clarification rather than making assumptions.
 - **Agent 3: Validation Agent**: Verifies that the extracted tasks align with the transcript. If confidence is < 60%, it triggers a **Self-Correction Loop** by providing feedback to Agent 2.
+- **Broadcasting Layer**: Generates an automated email distributing the actionable extract and summary to all meeting participants instantly.
 
 ### B. The Performance Verification Pipeline (PR Review)
 - **Entry Point**: `src/app/api/tasks/submit/route.ts`

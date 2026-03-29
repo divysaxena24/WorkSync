@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/core/neon";
-import { createId } from "@paralleldrive/cuid2";
+import { randomBytes } from "crypto";
 import { runVelocityAnalyzer } from "@/lib/ai/velocityAgent";
+
+const createId = () => randomBytes(12).toString('hex');
 import { sendRiskAlertEmail } from "@/lib/integrations/notifications";
 
+export const maxDuration = 300; 
+
 // Example format: GET /api/cron/bottlenecks
-export async function GET() {
+export async function GET(req: Request) {
+  const authHeader = req.headers.get('authorization');
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}` && process.env.NODE_ENV === 'production') {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
+
   try {
     // 1. Fetch all active tasks with deadlines (not completed or rejected)
     const activeTasks = await sql`

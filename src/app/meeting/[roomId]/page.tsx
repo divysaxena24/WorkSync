@@ -41,11 +41,11 @@ const CustomChat = () => {
     <div className="flex flex-col h-full bg-transparent overflow-hidden">
       <div 
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-4 py-2 space-y-3 custom-scrollbar flex flex-col justify-end"
+        className="flex-1 overflow-y-auto px-4 py-2 space-y-2 custom-scrollbar flex flex-col justify-end"
       >
-        <div className="flex-1" /> {/* Spacer to push messages to bottom */}
+        <div className="flex-1 min-h-[50px]" /> {/* Smaller initial spacer */}
         {chatMessages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center opacity-20 text-center p-6 mt-20">
+          <div className="h-full flex flex-col items-center justify-center opacity-20 text-center p-6 mt-10">
              <MessageSquare className="w-12 h-12 mb-4" />
              <p className="text-xs uppercase tracking-widest">No messages yet</p>
           </div>
@@ -91,7 +91,7 @@ const CustomChat = () => {
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
-        <p className="text-[9px] text-slate-600 mt-2 ml-1 uppercase tracking-widest font-medium">
+        <p className="text-[9px] text-slate-600 mt-2 ml-1 uppercase tracking-widest font-black">
           Enter to send • Shift + Enter for newline
         </p>
       </div>

@@ -3,6 +3,8 @@ import { auth } from "@clerk/nextjs/server";
 import { sql } from "@/lib/core/neon";
 import { randomBytes } from "crypto";
 import { runMeetingExtractionPipeline } from "@/lib/ai/agents";
+import { sendMeetingSummaryEmail, sendTaskAssignmentEmail } from "@/lib/integrations/notifications";
+export const maxDuration = 300; 
 
 const createId = () => randomBytes(12).toString('hex');
 
@@ -113,7 +115,22 @@ export async function POST(req: Request) {
           t.blockedById = blockerTask.id;
         }
       }
+      
+      // Notify task owner
+      const matchedUser = companyUsers.find((u: any) => u.id === t.ownerId);
+      if (matchedUser?.email) {
+        await sendTaskAssignmentEmail(matchedUser.email, matchedUser.name, t.title);
+      }
     }
+
+    // Send summary to all participants
+    const allEmails = companyUsers.map((u: any) => u.email).filter(Boolean);
+    await sendMeetingSummaryEmail(
+      allEmails, 
+      meeting.id, 
+      pipelineResult.summary.summary, 
+      pipelineResult.summary.actionItems
+    );
 
     return NextResponse.json({ 
       meetingId: meeting.id, 

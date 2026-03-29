@@ -6,10 +6,12 @@ WorkSyncAI transforms meeting transcripts into actionable tasks and evaluates de
 ## 🚀 Key Features
 
 - **Live AI Transcription**: Real-time speech-to-text during meetings using standard Web Speech APIs.
-- **Smart Task Extraction**: Uses **Llama 3.3 (via GROQ)** to identify actionable tasks from meeting transcripts and assign them with deadlines and priorities.
-- **Manual Assignment**: Delegating tasks to specific team members is as simple as a click during any live session.
+- **Meeting to Action Flow**: Extracts actionable items from transcripts, assigns owners based on context, and creates tracked project tasks.
+- **Ambiguity Detection**: The AI is programmed to ask for clarification rather than guessing when a task owner or requirement is ambiguous.
+- **Automated Summaries**: Instantly emails a concise summary and list of action items to all meeting participants.
 - **Automated PR Evaluation**: AI-driven code reviews that evaluate PR correctness, quality, and completeness against assigned tasks.
 - **Manager Dashboard**: High-level visibility into team backlog, verified work, active sprints, and at-risk overdue tasks with automated escalation alerts.
+- **Proactive AI Cron Jobs**: Automated background jobs detect SLA risks, send follow-up nudges, and escalate bottlenecks before they block the sprint.
 - **Employee Hub**: Focused task views with integrated PR submission workflows.
 
 ## 🛠 Tech Stack
@@ -74,6 +76,12 @@ GITHUB_TOKEN="your-github-personal-access-token"
 LIVEKIT_API_KEY="your-livekit-api-key"
 LIVEKIT_API_SECRET="your-livekit-secret"
 NEXT_PUBLIC_LIVEKIT_URL="your-livekit-ws-url"
+
+# Resend (Email Notifications)
+RESEND_API_KEY="your-resend-api-key"
+
+# Vercel Cron
+CRON_SECRET="your-cron-secret-string"
 ```
 
 ### 4. Database Initialization
@@ -91,9 +99,10 @@ Navigate to `http://localhost:3000` to see the results.
 ## 🧪 Development Workflow
 
 1.  **Sync**: Users log in and join/create a company.
-2.  **Meeting**: Start a meeting, record audio, and extract tasks using the AI engine.
-3.  **Execute**: Teams assign tasks manually or via AI.
-4.  **Evaluate**: Submit GitHub PR numbers to get instant feedback and score updates on the dashboard.
+2.  **Meeting**: Start a meeting, record audio.
+3.  **Meeting to Action**: The AI extracts tasks, automatically assigns owners, flags ambiguities without guessing, creates tasks in the system, and emails a summary to everyone.
+4.  **Execute & Nudge**: Teams execute work. Meanwhile, AI cron jobs proactively track velocity and send follow-ups.
+5.  **Evaluate**: Submit GitHub PR numbers to get instant feedback and score updates on the dashboard.
 
 ## 📄 License
 Precision built for high-performance teams. Under MIT License. © 2026 WorkSyncAI.
