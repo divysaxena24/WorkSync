@@ -21,6 +21,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { UserButton } from "@clerk/nextjs";
+import { ActivityStream } from "@/components/ai/ActivityStream";
 
 interface NavItemProps {
   href: string;
@@ -173,69 +174,19 @@ export function MissionControlShell({ children }: { children: React.ReactNode })
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 320, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
-            className="glass-border bg-black/20 backdrop-blur-xl z-50 flex flex-col"
+            className="glass-border bg-black/20 backdrop-blur-xl z-50 flex flex-col relative"
           >
-            <div className="p-6 flex items-center justify-between border-b border-white/5">
-              <div className="flex items-center gap-2">
-                <Activity className="w-5 h-5 text-primary" />
-                <span className="font-bold text-sm tracking-tight">Activity Nexus</span>
-              </div>
-              <button 
-                onClick={() => setIsRightPanelOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-white/5 text-muted-foreground transition-all"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
+            <button 
+              onClick={() => setIsRightPanelOpen(false)}
+              className="absolute top-6 right-6 p-1.5 rounded-lg hover:bg-white/5 text-muted-foreground transition-all z-10"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            
+            <div className="flex-1 overflow-hidden">
+              <ActivityStream />
             </div>
 
-            <div className="flex-1 overflow-y-auto hud-scrollbar p-6 space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/50 font-bold">Live Agents</span>
-                  <div className="px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-[9px] text-primary font-bold animate-pulse">Running</div>
-                </div>
-                
-                {[
-                  { agent: "Contextual Cleaner", status: "Parsing...", model: "Llama 3.1 8B", time: "2m ago" },
-                  { agent: "Insight Architect", status: "Idle", model: "Llama 3.3 70B", time: "10m ago" },
-                  { agent: "Risk Predictor", status: "Alerting", model: "Llama 3.3 70B", time: "Just now", critical: true },
-                ].map((item, i) => (
-                  <div key={i} className={cn(
-                    "p-3 rounded-xl border transition-all",
-                    item.critical ? "bg-red-500/5 border-red-500/20" : "bg-white/5 border-white/5"
-                  )}>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-foreground">{item.agent}</span>
-                      <span className="text-[10px] text-muted-foreground">{item.time}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className={cn("w-1.5 h-1.5 rounded-full", item.critical ? "bg-red-500" : "bg-primary")} />
-                        <span className="text-[10px] font-medium text-muted-foreground">{item.status}</span>
-                      </div>
-                      <span className="text-[9px] font-mono text-muted-foreground/50">{item.model}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="pt-4 border-t border-white/5">
-                <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/50 font-bold block mb-4">Neural Logs</span>
-                <div className="space-y-3 font-mono text-[10px]">
-                  {[
-                    "[09:42:12] Agent:Matcher identified 'frontend-fix'...",
-                    "[09:42:15] confidence_score generated: 0.942",
-                    "[09:43:01] task_birth animation triggered...",
-                    "[09:43:05] validation_loop success."
-                  ].map((log, i) => (
-                    <div key={i} className="text-muted-foreground flex gap-2">
-                      <span className="text-primary/50 shrink-0">›</span>
-                      <span>{log}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
           </motion.aside>
         )}
       </AnimatePresence>
