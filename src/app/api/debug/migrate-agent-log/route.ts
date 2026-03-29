@@ -4,7 +4,7 @@ import { sql } from "@/lib/core/neon";
 export async function GET() {
   try {
     await sql`
-      CREATE TABLE IF NOT EXISTS "agent_decision_log" (
+      CREATE TABLE IF NOT EXISTS "AgentDecisionLog" (
         "id" TEXT PRIMARY KEY,
         "agentName" TEXT NOT NULL,
         "agentRole" TEXT NOT NULL,
@@ -19,7 +19,7 @@ export async function GET() {
       )
     `;
 
-    return NextResponse.json({ success: true, message: "agent_decision_log table created" });
+    return NextResponse.json({ success: true, message: "AgentDecisionLog table created" });
   } catch (error: any) {
     console.error("[MIGRATE_AGENT_LOG]", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

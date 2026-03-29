@@ -138,7 +138,7 @@ const MeetingContent = memo(({
              />
              {(!track.publication || track.publication.isMuted) && (
                <div className="absolute inset-0 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm z-10 pointer-events-none">
-                 <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center backdrop-blur-3xl shadow-[0_0_50px_rgba(79,70,229,0.2)]">
+                 <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full bg-linear-to-br from-indigo-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center backdrop-blur-3xl shadow-[0_0_50px_rgba(79,70,229,0.2)]">
                    <span className="text-4xl md:text-5xl font-black text-indigo-400">
                      {(track.participant.name || track.participant.identity).slice(0, 2).toUpperCase()}
                    </span>
@@ -458,6 +458,7 @@ export default function SharedMeetingPage() {
   
   const recognitionRef = useRef<any>(null);
   const isListeningRef = useRef(false);
+  const isRestartingRef = useRef(false);
 
   const appendToTranscript = useCallback((text: string) => {
     setTranscript((prev: string) => prev + text);
@@ -527,7 +528,10 @@ export default function SharedMeetingPage() {
       recognitionRef.current.onerror = (event: any) => {
         if (event.error === 'no-speech') return; // silent, expected
 
-        console.error("Speech Recognition Error:", event.error);
+        // Skip logging transient errors that we handle silently below
+        if (event.error !== 'network' && event.error !== 'aborted') {
+          console.error("Speech Recognition Error:", event.error);
+        }
 
         if (event.error === 'audio-capture') {
           toast.error("No microphone found. Please connect a mic and allow access.", { duration: 5000 });
@@ -543,36 +547,55 @@ export default function SharedMeetingPage() {
           return;
         }
 
-        // network / aborted: attempt silent restart (common on localhost)
-        if ((event.error === 'network' || event.error === 'aborted') && isListeningRef.current) {
-          setTimeout(() => {
-            if (isListeningRef.current && recognitionRef.current) {
-              try { recognitionRef.current.start(); } catch (e) {}
-            }
-          }, 1500);
+        if (event.error === 'network' || event.error === 'aborted') {
+          // If we are still supposed to be listening, attempt a graceful restart with backoff
+          if (isListeningRef.current && !isRestartingRef.current) {
+            isRestartingRef.current = true;
+            console.log(`[browser] Speech recognition ${event.error} error. Attempting silent restart...`);
+            
+            setTimeout(() => {
+              if (isListeningRef.current && recognitionRef.current) {
+                try {
+                  recognitionRef.current.start();
+                  isRestartingRef.current = false;
+                } catch (e) {
+                  // If we still can't start, the onend handler will catch it and try again
+                  console.warn("[browser] Restart attempt failed, will retry on 'onend'");
+                  isRestartingRef.current = false;
+                }
+              } else {
+                isRestartingRef.current = false;
+              }
+            }, 1500); // 1.5s cooldown to let the previous session fully release resources
+          }
           return;
         }
       };
 
       recognitionRef.current.onend = () => {
-        // Use a small delay before restarting to ensure the previous session has fully released resources
-        if (isListeningRef.current && recognitionRef.current) {
+        // Only auto-restart if we are still 'active' and not already in the middle of a restart
+        if (isListeningRef.current && recognitionRef.current && !isRestartingRef.current) {
           setTimeout(() => {
-            if (isListeningRef.current && recognitionRef.current) {
+            if (isListeningRef.current && recognitionRef.current && !isRestartingRef.current) {
               try {
                 recognitionRef.current.start();
-              } catch (e) {
-                console.error("Failed to restart recognition:", e);
+              } catch (e: any) {
+                if (e.name === 'InvalidStateError') {
+                  // If it's already started, that's fine. If not, next heartbeat/toggle will fix it.
+                  console.debug("[browser] Recognition already started or busy.");
+                }
               }
             }
-          }, 500);
+          }, 800);
         }
       };
     }
 
     return () => {
+      // Cleanup
+      isListeningRef.current = false;
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        try { recognitionRef.current.stop(); } catch (e) {}
       }
     };
   }, [broadcastTranscript, appendToTranscript]);
@@ -618,6 +641,12 @@ export default function SharedMeetingPage() {
     toast.info("Processing meeting intelligence...");
     
     try {
+      // Safely stop transcription first
+      isListeningRef.current = false;
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch (e) {}
+      }
+
       const res = await fetch("/api/meeting/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -625,9 +654,12 @@ export default function SharedMeetingPage() {
       });
 
       const data = await res.json();
-      if (recognitionRef.current) recognitionRef.current.stop();
       toast.success("Meeting intelligence processed! Redirecting to review...");
-      router.push(`/review/${data.meetingId || roomId}`);
+      
+      // Small delay to allow LiveKit to heartbeat or cleanup before hard redirect
+      setTimeout(() => {
+        router.push(`/review/${data.meetingId || roomId}`);
+      }, 500);
     } catch (error) {
       toast.error("Failed to extract tasks");
     } finally {

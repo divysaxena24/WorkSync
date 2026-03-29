@@ -22,6 +22,23 @@ WorkSyncAI transforms meeting transcripts into actionable tasks and evaluates de
 - **UI Components**: [Shadcn UI](https://ui.shadcn.com/) & [Tailwind CSS 4+](https://tailwindcss.com/)
 - **Icons**: [Lucide React](https://lucide.dev/)
 
+## 🏗 Multi-Agent Architecture
+
+WorkSync AI uses a specialized **Multi-Agent Orchestration Layer** for high-precision task extraction and automated work verification.
+
+```mermaid
+graph TD
+    A[Meeting transcript] --> B(Transcript Analyzer)
+    B --> C(Task Orchestrator)
+    C --> D(Validation Agent)
+    D -- "Low Confidence" --> E[Self-Correction]
+    E --> C
+    D -- "High Confidence" --> F[(DB Store)]
+```
+
+> [!NOTE]
+> For a deep-dive into our **Agent Roles**, **Impact Model**, and **Technical Decision Logs**, please see our [Submission Summary](/submission_summary.md).
+
 ## 📦 Getting Started
 
 ### 1. Clone the repository

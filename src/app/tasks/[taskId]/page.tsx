@@ -64,11 +64,13 @@ export default async function TaskDetailPage({ params }: { params: { taskId: str
   let agentLogs: any[] = [];
   try {
     agentLogs = await sql`
-      SELECT * FROM "agent_decision_log"
+      SELECT * FROM "AgentDecisionLog"
       WHERE "taskId" = ${taskId} OR "meetingId" = ${task.meetingId}
       ORDER BY "createdAt" ASC
     `;
-  } catch { /* table may not exist yet */ }
+  } catch (error: any) { 
+    console.error("[AGENT_LOG_QUERY_ERROR]", error.message);
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {

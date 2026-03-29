@@ -146,7 +146,7 @@ export function ManagerDashboard({
       {/* ── HUMAN-IN-THE-LOOP: Pending Approval Gate ── */}
       {pendingTasks.length > 0 && (
         <Card className="border-2 border-amber-400/40 shadow-lg shadow-amber-500/10 bg-amber-50/50 overflow-hidden">
-          <div className="h-1 w-full bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400" />
+          <div className="h-1 w-full bg-linear-to-r from-amber-400 via-orange-400 to-amber-400" />
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2 text-amber-900">
@@ -191,7 +191,7 @@ export function ManagerDashboard({
                       </Badge>
                     </div>
                   </div>
-                  <Clock className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                 </label>
               ))}
             </div>
@@ -276,7 +276,7 @@ export function ManagerDashboard({
 
       {/* ── AI AUDIT TRAIL ── */}
       <Card className="border-none shadow-sm bg-slate-950 text-white overflow-hidden">
-        <div className="h-1 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+        <div className="h-1 w-full bg-linear-to-r from-indigo-500 via-purple-500 to-pink-500" />
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
             <Brain className="w-5 h-5 text-indigo-400" />
