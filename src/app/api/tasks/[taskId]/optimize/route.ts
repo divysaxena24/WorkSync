@@ -9,7 +9,7 @@ import { auth } from "@clerk/nextjs/server";
 import { sql } from "@/lib/core/neon";
 import { optimizeResource } from "@/lib/ai/resourceAgent";
 
-export async function POST(req: Request, { params }: { params: { taskId: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ taskId: string }> }) {
   const { userId: clerkId } = await auth();
   if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

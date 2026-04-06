@@ -50,10 +50,10 @@ export async function GET(req: Request) {
   const start = Date.now();
   const context = `
     MEETINGS HISTORY:
-    ${transcripts.map(m => `[${m.createdAt}] ${m.title}: ${m.transcript.substring(0, 1000)}`).join('\n\n')}
+    ${transcripts.map((m: any) => `[${m.createdAt}] ${m.title}: ${m.transcript.substring(0, 1000)}`).join('\n\n')}
     
     TASKS HISTORY:
-    ${tasks.map(t => `${t.title} (${t.status}) - Assigned to ${t.owner}`).join('\n')}
+    ${tasks.map((t: any) => `${t.title} (${t.status}) - Assigned to ${t.owner}`).join('\n')}
   `;
 
   const response = await groq.chat.completions.create({

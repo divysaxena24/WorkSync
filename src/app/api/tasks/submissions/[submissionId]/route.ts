@@ -7,7 +7,7 @@ import { evaluateSubmission } from "@/lib/ai/evaluateSubmission";
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { submissionId: string } }
+  { params }: { params: Promise<{ submissionId: string }> }
 ) {
   try {
     const { userId: clerkId } = await auth();
@@ -48,7 +48,7 @@ export async function DELETE(
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { submissionId: string } }
+  { params }: { params: Promise<{ submissionId: string }> }
 ) {
   try {
     const { userId: clerkId } = await auth();

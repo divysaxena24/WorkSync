@@ -24,6 +24,11 @@ WorkSyncAI transforms meeting transcripts into actionable tasks and evaluates de
 - **UI Components**: [Shadcn UI](https://ui.shadcn.com/) & [Tailwind CSS 4+](https://tailwindcss.com/)
 - **Icons**: [Lucide React](https://lucide.dev/)
 
+### SDLC, Delivery & Security Strategy
+- **Edge Layer Protection**: `middleware.ts` encapsulates basic global rate limiting logic to guard API pathways.
+- **Verification via Live Feedback**: Pull Request analyses are surfaced directly enforcing a tight feedback-refactor loop.
+- **State Management**: Safe and strict execution paths are verified using structured agent orchestration in `Task Orchestrator`.
+
 ## 🏗 Multi-Agent Architecture
 
 WorkSync AI uses a specialized **Multi-Agent Orchestration Layer** for high-precision task extraction and automated work verification.
